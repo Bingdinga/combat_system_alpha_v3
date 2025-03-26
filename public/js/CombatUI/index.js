@@ -64,7 +64,7 @@ export class CombatUI {
 
   // Initialize the UI with combat data
   initializeCombat(combatState) {
-    console.log('[CLIENT] CombatUI.initializeCombat called with state:', combatState);
+    // console.log('[CLIENT] CombatUI.initializeCombat called with state:', combatState);
 
     // Clear containers
     this.clearEntityContainers();

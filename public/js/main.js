@@ -317,7 +317,7 @@ function showRoomInfo() {
   // Make sure the start combat button is visible
   startCombatBtn.style.display = 'block';
 
-  console.log('Room info displayed, combat button should be visible');
+  // console.log('Room info displayed, combat button should be visible');
 }
 
 // Update player list

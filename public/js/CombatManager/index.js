@@ -43,19 +43,19 @@ export class CombatManager {
     setupSocketListeners() {
         // Combat initiated event
         this.socketManager.on('combatInitiated', (combatState) => {
-            console.log('[CLIENT] Handling combatInitiated event in CombatManager');
+            // console.log('[CLIENT] Handling combatInitiated event in CombatManager');
             this.initializeCombat(combatState);
         });
 
         // Combat updated event
         this.socketManager.on('combatUpdated', (combatState) => {
-            console.log('[CLIENT] Handling combatUpdated event in CombatManager');
+            // console.log('[CLIENT] Handling combatUpdated event in CombatManager');
             this.updateCombatState(combatState);
         });
 
         // Combat ended event
         this.socketManager.on('combatEnded', (data) => {
-            console.log('[CLIENT] Handling combatEnded event in CombatManager');
+            // console.log('[CLIENT] Handling combatEnded event in CombatManager');
             this.endCombat(data);
         });
 
@@ -78,25 +78,26 @@ export class CombatManager {
     initializeCombat(combatState) {
         // Initialize state
         this.state.initialize(combatState, this.socketManager.getSocketId());
-        console.log('[CLIENT] Combat state initialized, local player ID:', this.socketManager.getSocketId());
+        // console.log('[CLIENT] Combat state initialized, local player ID:', this.socketManager.getSocketId());
 
         // Create entity objects
         this.state.entities = this.updater.createEntities(combatState.entities);
-        console.log('[CLIENT] Created entity objects:', this.state.entities.length);
+        // console.log('[CLIENT] Created entity objects:', this.state.entities.length);
 
         // Initialize UI
-        console.log('[CLIENT] Initializing CombatUI with combat state');
+        // console.log('[CLIENT] Initializing CombatUI with combat state');
         this.combatUI.initializeCombat(combatState);
     }
+
     handleTurnChanged(turnData) {
-        console.log('Turn changed event received:', turnData); // Add debug logging
-        console.log('Local player ID:', this.socketManager.getSocketId()); // Check local player ID
+        // console.log('Turn changed event received:', turnData); // Add debug logging
+        // console.log('Local player ID:', this.socketManager.getSocketId()); // Check local player ID
 
         // Update turn state
         this.currentTurn.entityId = turnData.entityId;
         this.currentTurn.isLocalPlayerTurn = turnData.entityId === this.socketManager.getSocketId();
 
-        console.log('Is local player turn?', this.currentTurn.isLocalPlayerTurn); // Debug log
+        // console.log('Is local player turn?', this.currentTurn.isLocalPlayerTurn); // Debug log
 
         this.currentTurn.round = turnData.round;
         this.currentTurn.turnStartTime = Date.now();

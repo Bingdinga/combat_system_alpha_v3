@@ -58,7 +58,7 @@ export class SocketManager {
 
     // Combat events
     this.socket.on('combatInitiated', (data) => {
-      console.log('[CLIENT] Combat initiated event received:', data);
+      // console.log('[CLIENT] Combat initiated event received:', data);
       this.triggerEvent('combatInitiated', data);
     });
 
@@ -72,12 +72,12 @@ export class SocketManager {
     });
 
     this.socket.on('turnChanged', (data) => {
-      console.log('Received turnChanged event:', data); // Add debug logging
+      // console.log('Received turnChanged event:', data); // Add debug logging
       this.triggerEvent('turnChanged', data);
     });
 
     this.socket.on('turnEnded', (data) => {
-      console.log('Received turnEnded event:', data); // Add debug logging
+      // console.log('Received turnEnded event:', data); // Add debug logging
       this.triggerEvent('turnEnded', data);
     });
   }
@@ -131,7 +131,7 @@ export class SocketManager {
   }
 
   startCombat() {
-    console.log('[CLIENT] Emitting startCombat event');
+    // console.log('[CLIENT] Emitting startCombat event');
     this.socket.emit('startCombat');
   }
 

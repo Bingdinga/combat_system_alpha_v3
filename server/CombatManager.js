@@ -69,7 +69,7 @@ class CombatManager {
         actionPoints: 3.0,
         maxActionPoints: 3,
         actionTimer: 0,
-        actionRechargeRate: 5000, // 5 seconds per action point
+        // actionRechargeRate: 5000, // 5 seconds per action point
         lastActionTime: Date.now(),
         abilityScores: { ...classTemplate.baseAbilityScores },
         ac: classTemplate.baseAC,
@@ -94,6 +94,24 @@ class CombatManager {
         actionPoints: entity.maxActionPoints, // Start with full action points
         hasTakenTurn: false,
       };
+    });
+
+    entitiesWithInitiative.sort((a, b) => {
+      // Sort by initiative (descending)
+      if (b.initiative !== a.initiative) {
+        return b.initiative - a.initiative;
+      }
+      // If initiative is tied, use tiebreakers
+      // First tiebreaker: dexterity (higher goes first)
+      if (b.abilityScores.dexterity !== a.abilityScores.dexterity) {
+        return b.abilityScores.dexterity - a.abilityScores.dexterity;
+      }
+      // Second tiebreaker: player before enemy (for predictability)
+      if (a.type !== b.type) {
+        return a.type === 'player' ? -1 : 1;
+      }
+      // Last resort: random
+      return Math.random() - 0.5;
     });
 
     // Create combat state
@@ -213,19 +231,20 @@ class CombatManager {
   processNpcTurn(combat, enemy) {
     if (!combat.active || enemy.health <= 0) return;
 
-    // Select a target - priority to lower health players
-    const players = combat.entities.filter(e => e.type === 'player' && e.health > 0);
+    // Find all alive players
+    const alivePlayers = combat.entities.filter(e => e.type === 'player' && e.health > 0);
 
-    if (players.length === 0) {
+    if (alivePlayers.length === 0) {
       this.endTurn(combat);
       return;
     }
 
-    // Sort players by health (ascending)
-    players.sort((a, b) => a.health - b.health);
+    // Choose a random player as target instead of lowest health
+    const randomIndex = Math.floor(Math.random() * alivePlayers.length);
+    const target = alivePlayers[randomIndex];
 
-    // Choose the first (lowest health) player as target
-    const target = players[0];
+    // Log the target selection for debugging
+    // console.log(`Enemy ${enemy.name} randomly targeting ${target.name}`);
 
     // Perform attack action
     const actionData = {
