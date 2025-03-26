@@ -440,7 +440,7 @@ export class CombatManager {
         // Apply a temporary optimistic update for better UI feedback
         // This will be overridden by the next server update
         // const originalPoints = localPlayer.actionPoints;
-        localPlayer.actionPoints = Math.max(0, Math.floor(localPlayer.actionPoints) - 1 + (localPlayer.actionPoints % 1));
+        localPlayer.actionPoints = Math.max(0, localPlayer.actionPoints - 1);
 
         // Update UI
         this.combatUI.updateActionPoints();

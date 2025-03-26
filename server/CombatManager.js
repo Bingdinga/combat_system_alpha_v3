@@ -343,13 +343,10 @@ class CombatManager {
     const enemyCount = playerCount; // Previously: Math.max(1, Math.floor(playerCount * 1.5));
     const enemies = [];
 
-    // const enemyRechargeMult = 3;
-
     const enemyTypes = [
       {
         name: 'Goblin',
         health: 30,
-        // actionRechargeRate: 7000 * enemyRechargeMult,
         abilityScores: {
           strength: 3,
           dexterity: 2,
@@ -362,7 +359,6 @@ class CombatManager {
       {
         name: 'Orc',
         health: 50,
-        // actionRechargeRate: 9000 * enemyRechargeMult,
         abilityScores: {
           strength: 3,
           dexterity: 2,
@@ -375,7 +371,6 @@ class CombatManager {
       {
         name: 'Troll',
         health: 70,
-        // actionRechargeRate: 13000 * enemyRechargeMult,
         abilityScores: {
           strength: 5,
           dexterity: -1,
@@ -401,7 +396,6 @@ class CombatManager {
         actionPoints: 2,
         maxActionPoints: 2,  // Changed from 3 to 2
         actionTimer: 0,
-        actionRechargeRate: enemyType.actionRechargeRate,
         lastActionTime: Date.now(),
         abilityScores: enemyType.abilityScores,
         ac: enemyType.ac,

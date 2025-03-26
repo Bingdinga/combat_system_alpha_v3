@@ -52,7 +52,6 @@ export class CombatUI {
     // Create helpers in dependency order
     this.componentFactory = new ComponentFactory(this.combatManager);
     this.entityRenderer = new EntityRenderer(this.componentFactory);
-    this.actionPointManager = new ActionPointManager(this.componentFactory);
     this.modalManager = new ModalManager(
       this.selectionModal,
       this.selectionTitle,
@@ -157,8 +156,14 @@ export class CombatUI {
     const localPlayer = this.combatManager.getLocalPlayer();
     if (!localPlayer) return;
 
-    this.actionPointManager.updateActionPoints(this.actionPointsContainer, localPlayer);
+    // Instead of using ActionPointManager, just update action buttons
     this.updateActionButtons();
+
+    // Find and update the action points text element
+    const apText = document.querySelector('#action-points-container .action-points-text');
+    if (apText) {
+      apText.textContent = `Action Points: ${Math.floor(localPlayer.actionPoints)}/${localPlayer.maxActionPoints}`;
+    }
   }
 
   updateActionButtons(isPlayerTurn) {
@@ -209,6 +214,8 @@ export class CombatUI {
     }, 3000);
   }
 
+  // Modify in public/js/CombatUI/index.js in the CombatUI class
+
   showTurnSummary(message, actions) {
     // Create a turn summary notification
     const summary = document.createElement('div');
@@ -231,7 +238,66 @@ export class CombatUI {
         const target = this.combatManager.getEntityById(action.targetId);
         const targetName = target ? target.name : 'unknown';
 
-        actionItem.textContent = `${action.type} on ${targetName} (${timeSince}s)`;
+        // Get the detailed log entry for this action (if available)
+        const detailedLog = this.findLogEntryForAction(action);
+
+        // Basic action info
+        let actionText = `${action.type} on ${targetName} (${timeSince}s)`;
+
+        // Add roll information if available
+        if (detailedLog && detailedLog.details) {
+          const details = detailedLog.details;
+
+          // For attack actions
+          if (action.type === 'attack') {
+            if (details.d20Roll) {
+              actionText += ` - Roll: ${details.d20Roll}`;
+              if (details.attackModifier) {
+                actionText += ` + ${details.attackModifier} = ${details.totalAttackRoll}`;
+              }
+
+              // Add hit/miss info
+              if (details.isCritical) {
+                actionText += ` (CRITICAL HIT! ${details.damage} damage)`;
+              } else if (details.isCriticalFail) {
+                actionText += ` (CRITICAL MISS!)`;
+              } else if (details.isHit) {
+                actionText += ` (Hit for ${details.damage} damage)`;
+              } else {
+                actionText += ` (Miss vs AC ${details.targetAC})`;
+              }
+            }
+          }
+          // For cast spell actions
+          else if (action.type === 'cast') {
+            if (details.spellType) {
+              // For damage spells like fireball
+              if (details.d20Roll) {
+                actionText += ` - Roll: ${details.d20Roll}`;
+                if (details.spellAttackBonus) {
+                  actionText += ` + ${details.spellAttackBonus} = ${details.totalSpellRoll}`;
+                }
+              }
+
+              // Add spell effect info
+              if (details.damage) {
+                actionText += ` (${details.damage} damage)`;
+              } else if (details.healAmount) {
+                actionText += ` (${details.healAmount} healing)`;
+              } else if (details.buffValue) {
+                actionText += ` (${details.buffValue} ${details.spellType} boost)`;
+              }
+
+              // Add save info for spells with saves
+              if (details.saveDC) {
+                actionText += ` - DC ${details.saveDC} vs ${details.targetSaveRoll}`;
+                actionText += details.saveSuccess ? ` (Save succeeded)` : ` (Save failed)`;
+              }
+            }
+          }
+        }
+
+        actionItem.textContent = actionText;
         actionList.appendChild(actionItem);
       });
 
@@ -251,6 +317,30 @@ export class CombatUI {
         summary.parentNode.removeChild(summary);
       }
     }, 4000);
+  }
+
+  // Add this helper method to find the detailed log entry for an action
+  findLogEntryForAction(action) {
+    if (!this.combatManager || !this.combatManager.state || !this.combatManager.state.log) {
+      return null;
+    }
+
+    // Look through the log entries to find one that matches this action
+    // We'll look for entries with matching action type, target, and timestamps close to each other
+    const actionTimestamp = action.timestamp;
+
+    // Get log entries for the current turn
+    const relevantEntries = this.combatManager.state.log.filter(entry => {
+      return entry.action === action.type &&
+        entry.targetId === action.targetId &&
+        Math.abs(entry.time - actionTimestamp) < 1000; // Within 1 second
+    });
+
+    // Return the most recent matching entry
+    return relevantEntries.length > 0 ?
+      relevantEntries.reduce((latest, entry) =>
+        entry.time > latest.time ? entry : latest, relevantEntries[0]) :
+      null;
   }
 
   // Update combat timer

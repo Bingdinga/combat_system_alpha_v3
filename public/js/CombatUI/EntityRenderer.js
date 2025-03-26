@@ -100,17 +100,10 @@ export class EntityRenderer {
   }
 
   updateEntityActionPoints(entity, entityEl) {
-    const actionPointElements = entityEl.querySelectorAll('.entity-action-point');
-    if (!actionPointElements?.length) return;
-
-    actionPointElements.forEach((point, index) => {
-      const fill = point.querySelector('.entity-action-point-fill');
-      if (!fill) return;
-
-      const fillInfo = this.componentFactory.calculateActionPointFill(entity, index);
-      fill.style.height = `${fillInfo.percentage}%`;
-      fill.className = `entity-action-point-fill ${fillInfo.cssClass}`;
-    });
+    const actionPointsText = entityEl.querySelector('.entity-action-points-text');
+    if (actionPointsText) {
+      actionPointsText.textContent = `AP: ${Math.floor(entity.actionPoints)}/${entity.maxActionPoints}`;
+    }
   }
 
   updateEntityStatusEffects(entity, entityEl) {

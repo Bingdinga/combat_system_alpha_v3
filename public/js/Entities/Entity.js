@@ -12,7 +12,6 @@ export class Entity {
         this.actionPoints = data.actionPoints || 0;
         this.maxActionPoints = data.maxActionPoints || 3;
         this.actionTimer = data.actionTimer || 0;
-        // this.actionRechargeRate = data.actionRechargeRate || 5000;
         this.lastActionTime = data.lastActionTime || Date.now();
 
         // Updated ability scores: direct modifier system
@@ -60,12 +59,6 @@ export class Entity {
 
     getEnergyPercentage() {
         return Math.max(0, Math.min(100, (this.energy / this.maxEnergy) * 100));
-    }
-
-    getActionPointsPercentage() {
-        const fullPoints = Math.floor(this.actionPoints);
-        const partialPoint = this.actionPoints - fullPoints;
-        return partialPoint * 100;
     }
 
     update(data) {
