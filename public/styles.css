@@ -1047,3 +1047,88 @@ input[type="text"]:focus {
     color: #aaa;
     vertical-align: middle;
 }
+
+/* Combat Log styling */
+.combat-log-container {
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    padding: 8px;
+    margin-top: 8px;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.combat-log-header {
+    margin-bottom: 0.2rem;
+    border-bottom: 1px solid #333;
+    padding-bottom: 0.3rem;
+}
+
+.combat-log-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.combat-log {
+    overflow-y: auto;
+    height: 130px !important;
+    /* Use !important to override any other styles */
+    max-height: 130px !important;
+    min-height: 70px !important;
+    /* flex: 0 0 80px !important; */
+    /* flex-grow, flex-shrink, flex-basis */
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    scrollbar-width: thin;
+    /* For Firefox */
+}
+
+.log-entry {
+    padding: 0.3rem 0.5rem;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    font-size: 0.7rem;
+    border-left: 3px solid transparent;
+    margin-bottom: 4px;
+    /* Add small space between entries */
+}
+
+.log-entry.attack {
+    border-left-color: #cf6679;
+}
+
+.log-entry.cast {
+    border-left-color: #bb86fc;
+}
+
+.log-entry.turn {
+    border-left-color: #03dac6;
+    font-weight: bold;
+}
+
+.log-entry.round {
+    border-left-color: #ff9800;
+    font-weight: bold;
+    text-align: center;
+}
+
+.log-entry.damage {
+    color: #ff5252;
+}
+
+.log-entry.heal {
+    color: #66bb6a;
+}
+
+.log-entry.system {
+    font-style: italic;
+    color: #aaa;
+}
+
+.log-timestamp {
+    font-size: 0.7rem;
+    color: #666;
+    margin-right: 0.5rem;
+}

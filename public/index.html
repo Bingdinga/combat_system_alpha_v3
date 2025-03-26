@@ -136,7 +136,7 @@
 
             <div class="combat-controls">
                 <div class="action-points">
-                    <div class="action-points-label">Action Points</div>
+                    <!-- <div class="action-points-label">Action Points</div> -->
                     <div id="action-points-container" class="action-points-container">
                         <div class="action-points-text">Action Points: 0/0</div>
                         <!-- Action points will be added dynamically -->
@@ -149,6 +149,15 @@
                     <button id="attack-btn" class="btn btn-action" disabled data-key="[1]">Attack</button>
                     <button id="cast-btn" class="btn btn-action" disabled data-key="[2]">Cast Spell</button>
                     <button id="end-turn-btn" class="btn btn-secondary" disabled data-key="[0]">End Turn</button>
+                </div>
+
+                <div class="combat-log-container">
+                    <div class="combat-log-header">
+                        <h3>Combat Log</h3>
+                    </div>
+                    <div id="combat-log" class="combat-log">
+                        <!-- Log entries will be added here dynamically -->
+                    </div>
                 </div>
             </div>
 

@@ -2,14 +2,15 @@
 
 import { ComponentFactory } from './ComponentFactory.js';
 import { EntityRenderer } from './EntityRenderer.js';
-import { ActionPointManager } from './ActionPointManager.js';
 import { ModalManager } from './ModalManager.js';
 import { EventHandlers } from './EventHandlers.js';
 import { ActionTypes, getAction, fetchAbilitiesForClass } from '../Actions/index.js';
+import { CombatLog } from './CombatLog.js';
 
 export class CombatUI {
   constructor(combatManager) {
     this.combatManager = combatManager;
+    this.combatLog = null;
 
     // Cache DOM elements
     this.cacheElements();
@@ -19,8 +20,6 @@ export class CombatUI {
 
     // Setup event listeners
     this.setupEventListeners();
-
-    // this.eventHandlers = new EventHandlers(combatManager, this.modalManager, getAction);
   }
 
   // Cache all frequently used DOM elements
@@ -46,6 +45,8 @@ export class CombatUI {
     this.turnOrderContainer = document.getElementById('turn-order-container');
     this.turnTimerDisplay = document.getElementById('turn-timer');
     this.endTurnBtn = document.getElementById('end-turn-btn');
+
+    this.combatLogElement = document.getElementById('combat-log');
   }
 
   initializeHelpers() {
@@ -59,6 +60,7 @@ export class CombatUI {
       this.componentFactory
     );
     this.eventHandlers = new EventHandlers(this.combatManager, this.modalManager);
+    this.combatLog = new CombatLog(this.combatLogElement);
   }
 
   // Initialize the UI with combat data
@@ -79,6 +81,12 @@ export class CombatUI {
 
     // Show combat screen
     this.showCombatScreen();
+
+    // Initialize combat log with existing entries
+    if (combatState.log && combatState.log.length > 0) {
+      this.combatLog.clear();
+      this.combatLog.addEntries(combatState.log);
+    }
   }
 
   clearEntityContainers() {
@@ -214,109 +222,14 @@ export class CombatUI {
     }, 3000);
   }
 
-  // Modify in public/js/CombatUI/index.js in the CombatUI class
-
   showTurnSummary(message, actions) {
-    // Create a turn summary notification
-    const summary = document.createElement('div');
-    summary.className = 'turn-summary';
-
-    const summaryHeader = document.createElement('div');
-    summaryHeader.className = 'summary-header';
-    summaryHeader.textContent = message;
-
-    summary.appendChild(summaryHeader);
-
-    // Add action list if there were any actions
-    if (actions && actions.length > 0) {
-      const actionList = document.createElement('ul');
-      actionList.className = 'action-list';
-
-      actions.forEach(action => {
-        const actionItem = document.createElement('li');
-        const timeSince = (action.timeSinceTurnStart / 1000).toFixed(1);
-        const target = this.combatManager.getEntityById(action.targetId);
-        const targetName = target ? target.name : 'unknown';
-
-        // Get the detailed log entry for this action (if available)
-        const detailedLog = this.findLogEntryForAction(action);
-
-        // Basic action info
-        let actionText = `${action.type} on ${targetName} (${timeSince}s)`;
-
-        // Add roll information if available
-        if (detailedLog && detailedLog.details) {
-          const details = detailedLog.details;
-
-          // For attack actions
-          if (action.type === 'attack') {
-            if (details.d20Roll) {
-              actionText += ` - Roll: ${details.d20Roll}`;
-              if (details.attackModifier) {
-                actionText += ` + ${details.attackModifier} = ${details.totalAttackRoll}`;
-              }
-
-              // Add hit/miss info
-              if (details.isCritical) {
-                actionText += ` (CRITICAL HIT! ${details.damage} damage)`;
-              } else if (details.isCriticalFail) {
-                actionText += ` (CRITICAL MISS!)`;
-              } else if (details.isHit) {
-                actionText += ` (Hit for ${details.damage} damage)`;
-              } else {
-                actionText += ` (Miss vs AC ${details.targetAC})`;
-              }
-            }
-          }
-          // For cast spell actions
-          else if (action.type === 'cast') {
-            if (details.spellType) {
-              // For damage spells like fireball
-              if (details.d20Roll) {
-                actionText += ` - Roll: ${details.d20Roll}`;
-                if (details.spellAttackBonus) {
-                  actionText += ` + ${details.spellAttackBonus} = ${details.totalSpellRoll}`;
-                }
-              }
-
-              // Add spell effect info
-              if (details.damage) {
-                actionText += ` (${details.damage} damage)`;
-              } else if (details.healAmount) {
-                actionText += ` (${details.healAmount} healing)`;
-              } else if (details.buffValue) {
-                actionText += ` (${details.buffValue} ${details.spellType} boost)`;
-              }
-
-              // Add save info for spells with saves
-              if (details.saveDC) {
-                actionText += ` - DC ${details.saveDC} vs ${details.targetSaveRoll}`;
-                actionText += details.saveSuccess ? ` (Save succeeded)` : ` (Save failed)`;
-              }
-            }
-          }
-        }
-
-        actionItem.textContent = actionText;
-        actionList.appendChild(actionItem);
-      });
-
-      summary.appendChild(actionList);
-    } else {
-      const noActionsMsg = document.createElement('div');
-      noActionsMsg.className = 'no-actions';
-      noActionsMsg.textContent = 'No actions taken this turn';
-      summary.appendChild(noActionsMsg);
-    }
-
-    document.body.appendChild(summary);
-
-    // Remove after animation
-    setTimeout(() => {
-      if (summary.parentNode) {
-        summary.parentNode.removeChild(summary);
-      }
-    }, 4000);
+    // Instead of showing a floating notification, we'll just add it to the combat log
+    const entry = {
+      time: Date.now(),
+      message: message,
+      type: 'turn'
+    };
+    this.combatLog.addEntry(entry);
   }
 
   // Add this helper method to find the detailed log entry for an action

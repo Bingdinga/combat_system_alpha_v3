@@ -153,6 +153,11 @@ export class CombatManager {
         // Update action points UI - IMPORTANT: Pass the correct turn information!
         this.combatUI.updateActionPoints();
 
+        // Process any new log entries
+        if (newLogEntries && newLogEntries.length > 0) {
+            this.combatUI.combatLog.addEntries(newLogEntries);
+        }
+
         // THIS IS THE FIX: Update action buttons with the correct turn information
         // Use the stored turn state instead of setting it to undefined
         this.combatUI.updateActionButtons(this.currentTurn.isLocalPlayerTurn);
@@ -160,7 +165,7 @@ export class CombatManager {
 
     processLogEntries(logEntries) {
         logEntries.forEach(entry => {
-            // Handle different types of abilities
+            // Still process visual effects (floating text)
             if (entry.action === 'attack') {
                 this.processAttackLogEntry(entry);
             }
@@ -176,6 +181,9 @@ export class CombatManager {
                     'damage'
                 );
             }
+
+            // Ensure the entry is added to the combat log
+            // This is now handled by the combat log component
         });
     }
 
