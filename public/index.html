@@ -114,6 +114,8 @@
             <div class="combat-header">
                 <h2>Combat</h2>
                 <div class="combat-status">
+                    <div id="turn-info-display">Round 1</div>
+                    <div id="turn-timer">0.0s</div>
                     <span id="combat-timer">00:00</span>
                 </div>
             </div>
@@ -126,6 +128,10 @@
                 <div id="enemy-entities" class="entity-container">
                     <!-- Enemy entities will be added dynamically -->
                 </div>
+            </div>
+
+            <div id="turn-order-container" class="turn-order-container">
+                <!-- Turn order will be added dynamically here -->
             </div>
 
             <div class="combat-controls">
@@ -142,6 +148,7 @@
                     <button id="attack-btn" class="btn btn-action" disabled>Attack</button>
                     <!-- <button id="defend-btn" class="btn btn-action" disabled>Defend</button> -->
                     <button id="cast-btn" class="btn btn-action" disabled>Cast Spell</button>
+                    <button id="end-turn-btn" class="btn btn-secondary" disabled>End Turn</button>
                 </div>
             </div>
 

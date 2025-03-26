@@ -40,6 +40,12 @@ export class CombatUI {
     this.cancelSelectionBtn = document.getElementById('cancel-selection-btn');
 
     this.targetInfoElement = document.getElementById('current-target-info');
+
+    // Add turn-based UI elements
+    this.turnInfoDisplay = document.getElementById('turn-info-display');
+    this.turnOrderContainer = document.getElementById('turn-order-container');
+    this.turnTimerDisplay = document.getElementById('turn-timer');
+    this.endTurnBtn = document.getElementById('end-turn-btn');
   }
 
   initializeHelpers() {
@@ -58,6 +64,8 @@ export class CombatUI {
 
   // Initialize the UI with combat data
   initializeCombat(combatState) {
+    console.log('[CLIENT] CombatUI.initializeCombat called with state:', combatState);
+
     // Clear containers
     this.clearEntityContainers();
 
@@ -153,16 +161,88 @@ export class CombatUI {
     this.updateActionButtons();
   }
 
-  // Update action buttons based on current state
-  updateActionButtons() {
-    const localPlayer = this.combatManager.getLocalPlayer();
-    if (!localPlayer) return;
+  updateActionButtons(isPlayerTurn) {
+    // Enable/disable action buttons based on whose turn it is
+    const buttons = [this.attackBtn, this.castBtn, this.endTurnBtn];
 
-    const canAct = localPlayer.canAct?.() || (localPlayer.actionPoints >= 1 && localPlayer.health > 0);
-    const hasEnergy = localPlayer.energy >= 20;
+    buttons.forEach(btn => {
+      if (btn) {
+        // First disable based on turn
+        btn.disabled = !isPlayerTurn;
 
-    this.attackBtn.disabled = !canAct;
-    this.castBtn.disabled = !canAct || !hasEnergy;
+        // If it's the player's turn, check other conditions (like sufficient action points)
+        if (isPlayerTurn) {
+          const localPlayer = this.combatManager.getLocalPlayer();
+          if (btn === this.attackBtn || btn === this.castBtn) {
+            btn.disabled = !localPlayer || localPlayer.actionPoints < 1 || localPlayer.health <= 0;
+          }
+
+          if (btn === this.castBtn) {
+            btn.disabled = btn.disabled || localPlayer.energy < 20;
+          }
+        }
+      }
+    });
+  }
+
+  showTurnNotification(message) {
+    // Create and show a turn notification
+    const notification = document.createElement('div');
+    notification.className = 'turn-notification';
+    notification.textContent = message;
+
+    document.body.appendChild(notification);
+
+    // Remove after animation
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 3000);
+  }
+
+  showTurnSummary(message, actions) {
+    // Create a turn summary notification
+    const summary = document.createElement('div');
+    summary.className = 'turn-summary';
+
+    const summaryHeader = document.createElement('div');
+    summaryHeader.className = 'summary-header';
+    summaryHeader.textContent = message;
+
+    summary.appendChild(summaryHeader);
+
+    // Add action list if there were any actions
+    if (actions && actions.length > 0) {
+      const actionList = document.createElement('ul');
+      actionList.className = 'action-list';
+
+      actions.forEach(action => {
+        const actionItem = document.createElement('li');
+        const timeSince = (action.timeSinceTurnStart / 1000).toFixed(1);
+        const target = this.combatManager.getEntityById(action.targetId);
+        const targetName = target ? target.name : 'unknown';
+
+        actionItem.textContent = `${action.type} on ${targetName} (${timeSince}s)`;
+        actionList.appendChild(actionItem);
+      });
+
+      summary.appendChild(actionList);
+    } else {
+      const noActionsMsg = document.createElement('div');
+      noActionsMsg.className = 'no-actions';
+      noActionsMsg.textContent = 'No actions taken this turn';
+      summary.appendChild(noActionsMsg);
+    }
+
+    document.body.appendChild(summary);
+
+    // Remove after animation
+    setTimeout(() => {
+      if (summary.parentNode) {
+        summary.parentNode.removeChild(summary);
+      }
+    }, 4000);
   }
 
   // Update combat timer
@@ -177,5 +257,110 @@ export class CombatUI {
     this.eventHandlers.setupAttackButtonHandler(this.attackBtn);
     this.eventHandlers.setupCastButtonHandler(this.castBtn);
     this.eventHandlers.setupCancelButtonHandler(this.cancelSelectionBtn);
+
+    // Add end turn button handler
+    if (this.endTurnBtn) {
+      this.endTurnBtn.addEventListener('click', () => {
+        this.combatManager.endTurn();
+      });
+    }
+
+  }
+
+  updateTurnDisplay(turnData) {
+    // Update whose turn it is
+    if (this.turnInfoDisplay) {
+      const entityName = this.getEntityName(turnData.entityId);
+      this.turnInfoDisplay.textContent = `Round ${turnData.round} - ${entityName}'s Turn`;
+
+      // Highlight if it's local player's turn
+      if (turnData.isLocalPlayerTurn) {
+        this.turnInfoDisplay.classList.add('your-turn');
+      } else {
+        this.turnInfoDisplay.classList.remove('your-turn');
+      }
+    }
+
+    // Update turn order display
+    this.updateTurnOrderDisplay(turnData.turnOrder, turnData.turnIndex);
+
+    // Reset turn timer
+    this.resetTurnTimer();
+
+    // Update UI state based on whose turn it is
+    this.updateActionButtons(turnData.isLocalPlayerTurn);
+  }
+
+  getEntityName(entityId) {
+    const entity = this.combatManager.getEntityById(entityId);
+    return entity ? entity.name : 'Unknown';
+  }
+
+  updateTurnOrderDisplay(turnOrder, currentIndex) {
+    if (!this.turnOrderContainer) return;
+
+    // Clear current content
+    this.turnOrderContainer.innerHTML = '';
+
+    // Create turn order list
+    const turnList = document.createElement('ul');
+    turnList.className = 'turn-order-list';
+
+    turnOrder.forEach((entity, index) => {
+      const listItem = document.createElement('li');
+      listItem.className = 'turn-order-item';
+
+      // Add classes based on state
+      if (index === currentIndex) {
+        listItem.classList.add('current-turn');
+      }
+      if (entity.hasTakenTurn) {
+        listItem.classList.add('turn-taken');
+      }
+      if (entity.id === this.combatManager.socketManager.getSocketId()) {
+        listItem.classList.add('local-player');
+      }
+
+      // Add initiative value
+      const initiativeSpan = document.createElement('span');
+      initiativeSpan.className = 'initiative-value';
+      initiativeSpan.textContent = entity.initiative;
+
+      // Add entity name
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'entity-name';
+      nameSpan.textContent = entity.name;
+
+      // Assemble list item
+      listItem.appendChild(initiativeSpan);
+      listItem.appendChild(nameSpan);
+      turnList.appendChild(listItem);
+    });
+
+    this.turnOrderContainer.appendChild(turnList);
+  }
+
+  resetTurnTimer() {
+    this.turnStartTime = Date.now();
+    if (this.turnTimerDisplay) {
+      this.turnTimerDisplay.textContent = '0.0s';
+    }
+
+    // Clear existing timer interval
+    if (this.turnTimerInterval) {
+      clearInterval(this.turnTimerInterval);
+    }
+
+    // Set up new timer interval
+    this.turnTimerInterval = setInterval(() => {
+      this.updateTurnTimer();
+    }, 100);
+  }
+
+  updateTurnTimer() {
+    if (!this.turnTimerDisplay || !this.turnStartTime) return;
+
+    const elapsed = (Date.now() - this.turnStartTime) / 1000;
+    this.turnTimerDisplay.textContent = `${elapsed.toFixed(1)}s`;
   }
 }

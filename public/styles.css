@@ -911,3 +911,170 @@ input[type="text"]:focus {
 .target-info.hidden {
     display: none;
 }
+
+/* Add to public/styles.css */
+
+/* Turn-based UI elements */
+#turn-info-display {
+    font-size: 1.2rem;
+    font-weight: bold;
+    padding: 0.5rem;
+    border-radius: 4px;
+    text-align: center;
+    margin-bottom: 0.5rem;
+}
+
+#turn-info-display.your-turn {
+    background-color: rgba(3, 218, 198, 0.3);
+    color: #03dac6;
+    animation: pulse 2s infinite;
+}
+
+#turn-timer {
+    font-size: 1.1rem;
+    text-align: center;
+    color: #bb86fc;
+}
+
+.turn-order-container {
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    padding: 0.5rem;
+    margin: 1rem 0;
+}
+
+.turn-order-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.turn-order-item {
+    padding: 0.4rem 0.6rem;
+    border-radius: 4px;
+    background-color: #333;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.turn-order-item.current-turn {
+    background-color: #3a2953;
+    border: 2px solid #bb86fc;
+}
+
+.turn-order-item.turn-taken {
+    opacity: 0.6;
+}
+
+.turn-order-item.local-player {
+    border-left: 3px solid #03dac6;
+}
+
+.initiative-value {
+    font-weight: bold;
+    color: #bb86fc;
+    background-color: rgba(187, 134, 252, 0.2);
+    border-radius: 50%;
+    width: 1.5rem;
+    height: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Turn notifications */
+.turn-notification {
+    position: fixed;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(3, 218, 198, 0.9);
+    color: #000;
+    padding: 1rem 2rem;
+    font-size: 1.5rem;
+    font-weight: bold;
+    border-radius: 8px;
+    z-index: 1000;
+    animation: fade-out 3s forwards;
+}
+
+.turn-summary {
+    position: fixed;
+    bottom: 10%;
+    right: 2%;
+    background-color: rgba(30, 30, 30, 0.95);
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid #bb86fc;
+    max-width: 300px;
+    z-index: 1000;
+    animation: slide-in-right 0.5s ease-out, fade-out 4s forwards;
+}
+
+.summary-header {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #444;
+}
+
+.action-list {
+    list-style: none;
+    padding-left: 0.5rem;
+}
+
+.action-list li {
+    margin-bottom: 0.3rem;
+    font-size: 0.9rem;
+    color: #ccc;
+}
+
+.no-actions {
+    font-style: italic;
+    color: #999;
+    font-size: 0.9rem;
+}
+
+/* Animations */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(3, 218, 198, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px rgba(3, 218, 198, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(3, 218, 198, 0);
+    }
+}
+
+@keyframes fade-out {
+    0% {
+        opacity: 1;
+    }
+
+    70% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}
+
+@keyframes slide-in-right {
+    0% {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}

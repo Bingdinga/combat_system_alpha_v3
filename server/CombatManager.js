@@ -9,11 +9,13 @@ class CombatManager {
     this.combats = new Map(); // roomId -> combatState
 
     // Start NPC AI processing loop
-    setInterval(() => this.processNpcAi(), 1000);
+    // setInterval(() => this.processNpcAi(), 1000);
   }
 
   // Initialize a new combat for a room
   initiateCombat(roomId) {
+    console.log(`[SERVER] Attempt to initiate combat in room ${roomId}`);
+
     // Check if room exists and is not already in combat
     if (this.roomManager.isRoomInCombat(roomId)) {
       return;
@@ -24,6 +26,7 @@ class CombatManager {
     if (players.length === 0) {
       return;
     }
+    console.log(`[SERVER] Players in room ${roomId}:`, players);
 
     // Set up player entities from room players with character classes
     const playerEntities = players.map(player => {
@@ -80,30 +83,242 @@ class CombatManager {
     // Generate enemies based on number of players
     const enemies = this.generateEnemies(players.length);
 
+    // Roll initiative for all entities
+    const entitiesWithInitiative = [...playerEntities, ...enemies].map(entity => {
+      // Calculate initiative: d20 + dexterity modifier
+      const initiativeRoll = Math.floor(Math.random() * 20) + 1;
+      const dexModifier = entity.abilityScores.dexterity;
+      const initiative = initiativeRoll + dexModifier;
+
+      return {
+        ...entity,
+        initiative: initiative,
+        initiativeRoll: initiativeRoll, // Store original roll for display/tiebreakers
+        actionPoints: entity.maxActionPoints, // Start with full action points
+        hasTakenTurn: false,
+      };
+    });
+
     // Create combat state
     const combatState = {
       id: uuidv4(),
       roomId: roomId,
       startTime: Date.now(),
-      entities: [...playerEntities, ...enemies],
+      entities: entitiesWithInitiative,
       log: [{
         time: Date.now(),
         message: 'Combat has begun!'
       }],
-      active: true
+      active: true,
+      currentTurn: 0, // Index of entity whose turn it is
+      round: 1, // Combat round counter
+      turnStartTime: Date.now(), // When the current turn started
     };
 
     // Store combat state
     this.combats.set(roomId, combatState);
+
+    console.log(`[SERVER] Combat state created and stored for room ${roomId}`);
 
     // Mark room as in combat
     this.roomManager.setRoomCombatStatus(roomId, true);
 
     // Notify all players in the room
     this.io.to(roomId).emit('combatInitiated', combatState);
+    console.log(`[SERVER] combatInitiated event emitted to room ${roomId}`);
+
+    // Start the first turn
+    this.startNextTurn(combatState);
 
     console.log(`Combat initiated in room ${roomId}`);
     return combatState;
+  }
+
+  // New method to start the next turn
+  startNextTurn(combat) {
+    if (!combat.active) return;
+
+    // If we've gone through all entities, start a new round
+    if (combat.currentTurn >= combat.entities.length) {
+      combat.round++;
+      combat.currentTurn = 0;
+
+      // Reset hasTakenTurn flag for the new round
+      combat.entities.forEach(entity => {
+        entity.hasTakenTurn = false;
+      });
+
+      // Log new round
+      combat.log.push({
+        time: Date.now(),
+        message: `Round ${combat.round} begins!`,
+        type: 'round'
+      });
+    }
+
+    // Get the entity whose turn it is
+    const currentEntity = combat.entities[combat.currentTurn];
+
+    // Skip dead entities
+    if (currentEntity.health <= 0) {
+      combat.currentTurn++;
+      this.startNextTurn(combat);
+      return;
+    }
+
+    // Reset turn data
+    currentEntity.hasTakenTurn = true;
+    currentEntity.turnStartTime = Date.now();
+    currentEntity.actionsTaken = [];
+
+    // Refresh action points at the start of turn
+    currentEntity.actionPoints = currentEntity.maxActionPoints;
+
+    // Log turn start
+    combat.log.push({
+      time: Date.now(),
+      message: `${currentEntity.name}'s turn begins!`,
+      type: 'turn',
+      entityId: currentEntity.id,
+      entityType: currentEntity.type
+    });
+
+    // Update turn start time
+    combat.turnStartTime = Date.now();
+
+    // Notify clients about turn change
+    this.io.to(combat.roomId).emit('turnChanged', {
+      entityId: currentEntity.id,
+      entityType: currentEntity.type,
+      round: combat.round,
+      turnIndex: combat.currentTurn,
+      turnOrder: combat.entities.map(e => ({
+        id: e.id,
+        name: e.name,
+        type: e.type,
+        initiative: e.initiative,
+        hasTakenTurn: e.hasTakenTurn
+      }))
+    });
+
+    // Send updated combat state
+    this.io.to(combat.roomId).emit('combatUpdated', combat);
+
+    // If it's an enemy's turn, process it automatically after a short delay
+    if (currentEntity.type === 'enemy') {
+      setTimeout(() => {
+        this.processNpcTurn(combat, currentEntity);
+      }, 1000); // 1 second delay before NPC acts
+    }
+  }
+
+  // Process enemy turn
+  processNpcTurn(combat, enemy) {
+    if (!combat.active || enemy.health <= 0) return;
+
+    // Select a target - priority to lower health players
+    const players = combat.entities.filter(e => e.type === 'player' && e.health > 0);
+
+    if (players.length === 0) {
+      this.endTurn(combat);
+      return;
+    }
+
+    // Sort players by health (ascending)
+    players.sort((a, b) => a.health - b.health);
+
+    // Choose the first (lowest health) player as target
+    const target = players[0];
+
+    // Perform attack action
+    const actionData = {
+      type: 'attack',
+      targetId: target.id
+    };
+
+    const result = this.processAction(combat, enemy, actionData);
+
+    if (result) {
+      // Add log entry
+      combat.log.push({
+        time: Date.now(),
+        actor: result.actorName,
+        actorId: result.actorId,
+        actorType: 'enemy',
+        action: 'attack',
+        target: result.targetName,
+        targetId: result.targetId,
+        message: result.message,
+        details: result.details,
+        timeSinceTurnStart: Date.now() - combat.turnStartTime
+      });
+
+      // Record the action in the enemy's actions taken this turn
+      enemy.actionsTaken = enemy.actionsTaken || [];
+      enemy.actionsTaken.push({
+        type: 'attack',
+        targetId: target.id,
+        timestamp: Date.now(),
+        timeSinceTurnStart: Date.now() - combat.turnStartTime
+      });
+
+      // Consume action points
+      enemy.actionPoints--;
+
+      // Check combat end conditions
+      if (this.checkCombatEnd(combat)) return;
+
+      // Send updated combat state
+      this.io.to(combat.roomId).emit('combatUpdated', combat);
+    }
+
+    // Wait a bit, then check if the NPC should continue or end turn
+    setTimeout(() => {
+      // If NPC has remaining action points and combat is active, it might act again
+      if (enemy.actionPoints > 0 && combat.active && enemy.health > 0) {
+        // 70% chance to act again if possible
+        if (Math.random() < 0.7) {
+          this.processNpcTurn(combat, enemy);
+          return;
+        }
+      }
+
+      // Otherwise, end the turn
+      this.endTurn(combat);
+    }, 1500); // 1.5 second delay between actions
+  }
+
+  // Add a new method for ending a turn
+  endTurn(combat) {
+    if (!combat.active) return;
+
+    const currentEntity = combat.entities[combat.currentTurn];
+    const turnDuration = Date.now() - combat.turnStartTime;
+
+    // Add turn summary to log
+    combat.log.push({
+      time: Date.now(),
+      message: `${currentEntity.name}'s turn ends (${(turnDuration / 1000).toFixed(1)}s)`,
+      type: 'turnEnd',
+      entityId: currentEntity.id,
+      entityType: currentEntity.type,
+      turnDuration: turnDuration,
+      actionsTaken: currentEntity.actionsTaken || []
+    });
+
+    // Move to the next entity
+    combat.currentTurn++;
+
+    // Send turn end notification
+    this.io.to(combat.roomId).emit('turnEnded', {
+      entityId: currentEntity.id,
+      entityType: currentEntity.type,
+      turnDuration: turnDuration,
+      actionsTaken: currentEntity.actionsTaken || []
+    });
+
+    // Start the next turn
+    this.startNextTurn(combat);
   }
 
   // Generate enemy entities based on player count
@@ -181,13 +396,12 @@ class CombatManager {
     return enemies;
   }
 
-  // Process player action
+  // Modify handlePlayerAction to work with the turn-based system
   handlePlayerAction(socketId, actionData) {
-    // Get room ID
+    // Get room ID and combat state
     const roomId = this.roomManager.getSocketRoom(socketId);
     if (!roomId) return;
 
-    // Get combat state
     const combat = this.combats.get(roomId);
     if (!combat || !combat.active) return;
 
@@ -195,20 +409,41 @@ class CombatManager {
     const playerEntity = combat.entities.find(entity => entity.id === socketId);
     if (!playerEntity) return;
 
-    // Check if player has enough action points
-    if (playerEntity.actionPoints < 1) {
+    // Check if it's the player's turn
+    const currentEntity = combat.entities[combat.currentTurn];
+    if (currentEntity.id !== socketId) {
+      // It's not this player's turn - send error
+      this.io.to(socketId).emit('actionError', {
+        message: "It's not your turn!"
+      });
       return;
     }
 
-    // Process the action based on type
+    // Check if player has enough action points
+    if (playerEntity.actionPoints < 1) {
+      this.io.to(socketId).emit('actionError', {
+        message: "Not enough action points!"
+      });
+      return;
+    }
+
+    // Process the action
     const result = this.processAction(combat, playerEntity, actionData);
     if (!result) return;
 
-    // Consume exactly 1 action point
-    playerEntity.actionPoints = Math.max(0, Math.floor(playerEntity.actionPoints) - 1 + (playerEntity.actionPoints % 1));
-    playerEntity.lastActionTime = Date.now();
+    // Consume action point
+    playerEntity.actionPoints--;
 
-    // Add detailed log entry
+    // Track action in the player's actions this turn
+    playerEntity.actionsTaken = playerEntity.actionsTaken || [];
+    playerEntity.actionsTaken.push({
+      type: actionData.type,
+      targetId: actionData.targetId,
+      timestamp: Date.now(),
+      timeSinceTurnStart: Date.now() - combat.turnStartTime
+    });
+
+    // Add detailed log entry with turn timing
     combat.log.push({
       time: Date.now(),
       actor: result.actorName,
@@ -218,14 +453,33 @@ class CombatManager {
       target: result.targetName,
       targetId: result.targetId,
       message: result.message,
-      details: result.details
+      details: result.details,
+      timeSinceTurnStart: Date.now() - combat.turnStartTime
     });
 
     // Check for combat end conditions
     this.checkCombatEnd(combat);
 
-    // Send updated combat state to all players
+    // Send updated combat state
     this.io.to(roomId).emit('combatUpdated', combat);
+  }
+
+  // New method to handle end turn request from player
+  handleEndTurn(socketId) {
+    const roomId = this.roomManager.getSocketRoom(socketId);
+    if (!roomId) return;
+
+    const combat = this.combats.get(roomId);
+    if (!combat || !combat.active) return;
+
+    // Check if it's really this player's turn
+    const currentEntity = combat.entities[combat.currentTurn];
+    if (currentEntity.id !== socketId) {
+      return; // Not this player's turn
+    }
+
+    // End the turn
+    this.endTurn(combat);
   }
 
   // Process an action (attack, defend, cast spell)
@@ -282,6 +536,7 @@ class CombatManager {
   // NPC AI processing loop
   processNpcAi() {
     // Process each active combat
+    console.log("[SERVER] Running NPC AI processing");
     for (const [roomId, combat] of this.combats.entries()) {
       if (!combat.active) continue;
 

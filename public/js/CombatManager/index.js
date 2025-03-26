@@ -15,13 +15,23 @@ export class CombatManager {
 
         // Initialize UI
         this.initializeUI();
-        console.log('CombatUI initialized:', this.combatUI);
+        // console.log('CombatUI initialized:', this.combatUI);
 
         // Setup socket event listeners
         this.setupSocketListeners();
 
         // Start update loop
         this.startUpdateLoop();
+
+        // Add turn management state
+        this.currentTurn = {
+            entityId: null,
+            isLocalPlayerTurn: false,
+            round: 1,
+            turnStartTime: null,
+            turnIndex: 0,
+            turnOrder: []
+        };
     }
 
     // Initialize UI
@@ -33,17 +43,34 @@ export class CombatManager {
     setupSocketListeners() {
         // Combat initiated event
         this.socketManager.on('combatInitiated', (combatState) => {
+            console.log('[CLIENT] Handling combatInitiated event in CombatManager');
             this.initializeCombat(combatState);
         });
 
         // Combat updated event
         this.socketManager.on('combatUpdated', (combatState) => {
+            console.log('[CLIENT] Handling combatUpdated event in CombatManager');
             this.updateCombatState(combatState);
         });
 
         // Combat ended event
         this.socketManager.on('combatEnded', (data) => {
+            console.log('[CLIENT] Handling combatEnded event in CombatManager');
             this.endCombat(data);
+        });
+
+        // Add turn-related event listeners
+        this.socketManager.on('turnChanged', (turnData) => {
+            this.handleTurnChanged(turnData);
+        });
+
+        this.socketManager.on('turnEnded', (turnData) => {
+            this.handleTurnEnded(turnData);
+        });
+
+        this.socketManager.on('actionError', (errorData) => {
+            // Display error message to user
+            alert(errorData.message);
         });
     }
 
@@ -51,12 +78,55 @@ export class CombatManager {
     initializeCombat(combatState) {
         // Initialize state
         this.state.initialize(combatState, this.socketManager.getSocketId());
+        console.log('[CLIENT] Combat state initialized, local player ID:', this.socketManager.getSocketId());
 
         // Create entity objects
         this.state.entities = this.updater.createEntities(combatState.entities);
+        console.log('[CLIENT] Created entity objects:', this.state.entities.length);
 
         // Initialize UI
+        console.log('[CLIENT] Initializing CombatUI with combat state');
         this.combatUI.initializeCombat(combatState);
+    }
+
+    handleTurnChanged(turnData) {
+        // Update turn state
+        this.currentTurn.entityId = turnData.entityId;
+        this.currentTurn.isLocalPlayerTurn = turnData.entityId === this.socketManager.getSocketId();
+        this.currentTurn.round = turnData.round;
+        this.currentTurn.turnStartTime = Date.now();
+        this.currentTurn.turnIndex = turnData.turnIndex;
+        this.currentTurn.turnOrder = turnData.turnOrder;
+
+        // Update UI
+        this.combatUI.updateTurnDisplay(this.currentTurn);
+        this.combatUI.updateActionButtons(this.currentTurn.isLocalPlayerTurn);
+
+        // Show turn notification
+        const entity = this.getEntityById(turnData.entityId);
+        if (entity) {
+            const message = this.currentTurn.isLocalPlayerTurn ?
+                "Your turn!" : `${entity.name}'s turn`;
+            this.combatUI.showTurnNotification(message);
+        }
+    }
+
+    handleTurnEnded(turnData) {
+        // Process end of turn
+        const entity = this.getEntityById(turnData.entityId);
+
+        if (entity) {
+            // Show turn summary
+            const actionCount = turnData.actionsTaken.length;
+            const turnSeconds = (turnData.turnDuration / 1000).toFixed(1);
+            const message = `${entity.name}'s turn ended (${actionCount} actions, ${turnSeconds}s)`;
+            this.combatUI.showTurnSummary(message, turnData.actionsTaken);
+        }
+    }
+
+    // Helper to get entity by ID
+    getEntityById(entityId) {
+        return this.state.entities.find(e => e.id === entityId);
     }
 
     // Update combat state from server
@@ -307,6 +377,12 @@ export class CombatManager {
         // Get local player
         const localPlayer = this.getLocalPlayer();
         if (!localPlayer) return;
+
+        // Check if it's the local player's turn
+        if (!this.currentTurn.isLocalPlayerTurn) {
+            alert("It's not your turn!");
+            return;
+        }
 
         // Only allow actions with a full action point available
         if (localPlayer.actionPoints < 1) {

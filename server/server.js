@@ -74,6 +74,10 @@ io.on('connection', (socket) => {
     combatManager.handlePlayerAction(socket.id, actionData);
   });
 
+  socket.on('endTurn', () => {
+    combatManager.handleEndTurn(socket.id);
+  });
+
   // Handle disconnection
   socket.on('disconnect', () => {
     console.log(`User disconnected: ${socket.id}`);

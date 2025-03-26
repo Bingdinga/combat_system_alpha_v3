@@ -58,7 +58,7 @@ export class SocketManager {
 
     // Combat events
     this.socket.on('combatInitiated', (data) => {
-      console.log('Combat initiated!');
+      console.log('[CLIENT] Combat initiated event received:', data);
       this.triggerEvent('combatInitiated', data);
     });
 
@@ -94,6 +94,10 @@ export class SocketManager {
     }
   }
 
+  endTurn() {
+    this.socket.emit('endTurn');
+  }
+
   // Trigger registered callbacks for an event
   triggerEvent(event, data) {
     if (!this.eventCallbacks[event]) return;
@@ -117,6 +121,7 @@ export class SocketManager {
   }
 
   startCombat() {
+    console.log('[CLIENT] Emitting startCombat event');
     this.socket.emit('startCombat');
   }
 

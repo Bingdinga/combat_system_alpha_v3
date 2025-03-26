@@ -273,9 +273,9 @@ function setupSocketListeners() {
     // Show room info
     showRoomInfo();
 
-    console.log('Start combat button in DOM:', document.getElementById('start-combat-btn'));
-    console.log('Room info container:', document.getElementById('room-info'));
-    console.log('Room info display style:', document.getElementById('room-info').style.display);
+    // console.log('Start combat button in DOM:', document.getElementById('start-combat-btn'));
+    // console.log('Room info container:', document.getElementById('room-info'));
+    // console.log('Room info display style:', document.getElementById('room-info').style.display);
   });
 
   // Player joined event
