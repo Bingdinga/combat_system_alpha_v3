@@ -1,0 +1,913 @@
+/* General Styles */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Silkscreen', monospace;
+    /* Change to VT323 as default */
+}
+
+body {
+    background-color: #121212;
+    color: #ffffff;
+    line-height: 1.4;
+    font-size: 22px;
+    /* Slightly larger default font size for better readability */
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.screen {
+    display: none;
+    width: 100%;
+    min-height: 100vh;
+}
+
+.screen.active {
+    display: block;
+}
+
+h1,
+h2,
+h3 {
+    margin-bottom: 1rem;
+    text-align: center;
+    letter-spacing: 2px;
+}
+
+h1 {
+    font-size: 3rem;
+    margin-bottom: 2rem;
+    color: #ff4081;
+}
+
+h2 {
+    font-size: 2.2rem;
+    color: #bb86fc;
+}
+
+h3 {
+    font-size: 1.8rem;
+    color: #03dac6;
+}
+
+/* Form Styles */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+    color: #bb86fc;
+}
+
+input[type="text"] {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #333;
+    border-radius: 4px;
+    background-color: #1e1e1e;
+    color: #fff;
+    font-size: 1rem;
+}
+
+input[type="text"]:focus {
+    border-color: #bb86fc;
+    outline: none;
+}
+
+/* Button Styles */
+.btn {
+    display: inline-block;
+    padding: 0.5rem 1.3rem;
+    border: none;
+    border-radius: 4px;
+    font-size: 1.3rem;
+    font-weight: bold;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    text-transform: uppercase;
+}
+
+.btn-primary {
+    background-color: #bb86fc;
+    color: #000;
+}
+
+.btn-primary:hover {
+    background-color: #9969da;
+}
+
+.btn-secondary {
+    background-color: #333;
+    color: #fff;
+}
+
+.btn-secondary:hover {
+    background-color: #444;
+}
+
+.btn-action {
+    background-color: #cf6679;
+    color: #000;
+}
+
+.btn-action:hover {
+    background-color: #b4505f;
+}
+
+.btn:disabled {
+    background-color: #666;
+    cursor: not-allowed;
+}
+
+/* Room Screen Styles */
+#login-form {
+    margin-bottom: 2rem;
+}
+
+#room-info {
+    background-color: #1e1e1e;
+    padding: 1.5rem;
+    border-radius: 8px;
+}
+
+#player-list li {
+    padding: 0.5rem;
+    background-color: #333;
+    margin-bottom: 0.5rem;
+    border-radius: 4px;
+}
+
+#start-combat-btn,
+#leave-room-btn {
+    margin-top: 1rem;
+    width: 100%;
+}
+
+#leave-room-btn {
+    margin-top: 0.5rem;
+}
+
+/* Combat Screen Styles */
+.combat-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.combat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #333;
+}
+
+.combat-timer {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #03dac6;
+}
+
+.combat-arena {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.entity-container {
+    flex: 1;
+    min-width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.entity-card {
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    padding: 0.7rem;
+    position: relative;
+    cursor: pointer;
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.entity-card:hover:not(.selected):not(.dead) {
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+}
+
+.entity-card.player {
+    border-left: 4px solid #2b2999;
+}
+
+.entity-card.enemy {
+    border-left: 4px solid #992d40;
+}
+
+.entity-card.selected {
+    box-shadow: 0 0 0 3px #03dac6, 0 0 10px 2px rgba(3, 218, 198, 0.5);
+    transform: translateY(-2px);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.entity-card.dead {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.entity-name {
+    font-weight: bold;
+    margin-bottom: 0.3rem;
+    font-size: 1.3rem;
+}
+
+.health-bar-container,
+.energy-bar-container {
+    height: 16px;
+    background-color: #333;
+    border-radius: 8px;
+    margin-bottom: 0.1rem;
+    overflow: hidden;
+}
+
+.health-bar {
+    height: 100%;
+    background-color: #c7344f;
+    transition: width 0.3s ease;
+}
+
+.energy-bar {
+    height: 100%;
+    background-color: #d4d244;
+    transition: width 0.3s ease;
+}
+
+/* Combat Controls */
+.combat-controls {
+    background-color: #1e1e1e;
+    padding: 0.8rem;
+    border-radius: 8px;
+    margin-bottom: 0.8rem;
+}
+
+.action-points {
+    margin-bottom: 1rem;
+}
+
+.action-bar-container {
+    height: 10px;
+    background-color: #333;
+    border-radius: 5px;
+    margin-top: 0.5rem;
+    overflow: hidden;
+}
+
+.action-bar {
+    height: 100%;
+    background-color: #bb86fc;
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+}
+
+.action-buttons .btn {
+    flex: 1;
+}
+
+/* Combat Log */
+.combat-log-container {
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    padding: 1rem;
+    max-height: 250px;
+}
+
+.scrollable {
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.combat-log .log-entry {
+    padding: 0.5rem;
+    border-bottom: 1px solid #333;
+}
+
+.combat-log .log-entry:last-child {
+    border-bottom: none;
+}
+
+.log-time {
+    color: #666;
+    font-size: 0.8rem;
+}
+
+/* Result Screen */
+#result-title {
+    margin-bottom: 1rem;
+}
+
+#result-message {
+    font-size: 1.2rem;
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.stats-container {
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+#combat-stats {
+    margin-top: 1rem;
+}
+
+#return-btn {
+    width: 100%;
+}
+
+/* Selection Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    padding: 1.5rem;
+    width: 90%;
+    max-width: 500px;
+}
+
+.selection-list {
+    margin: 1rem 0;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.selection-option {
+    padding: 0.75rem;
+    background-color: #333;
+    margin-bottom: 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.selection-option:hover {
+    background-color: #444;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Media Queries for Responsive Design */
+@media (max-width: 768px) {
+    .combat-arena {
+        flex-direction: column;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    .modal-content {
+        width: 95%;
+    }
+}
+
+-list {
+    list-style: none;
+    margin: 1rem 0;
+}
+
+/* Simplified Action Points Display */
+.action-points-container {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1rem;
+}
+
+.action-point {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: #333;
+    position: relative;
+    overflow: hidden;
+}
+
+.action-point-fill {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 0%;
+    transition: height 0.3s ease, background-color 0.3s ease;
+    background-color: #cf6679;
+    /* Red when under 50% */
+}
+
+.action-point-fill.medium {
+    background-color: #ffb74d;
+    /* Yellow from 50-99% */
+}
+
+.action-point-fill.full {
+    background-color: #66bb6a;
+    /* Green when full */
+}
+
+/* Smaller version for entity cards */
+.entity-action-points {
+    display: flex;
+    gap: 4px;
+    margin-top: 8px;
+}
+
+.entity-action-point {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #333;
+    position: relative;
+    overflow: hidden;
+}
+
+.entity-action-point-fill {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 0%;
+    transition: height 0.3s ease, background-color 0.3s ease;
+    background-color: #cf6679;
+    /* Red when under 50% */
+}
+
+.entity-action-point-fill.medium {
+    background-color: #ffb74d;
+    /* Yellow from 50-99% */
+}
+
+.entity-action-point-fill.full {
+    background-color: #66bb6a;
+    /* Green when full */
+}
+
+/* Combat Log Styling */
+.combat-log-container {
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    height: 350px;
+    /* Fixed height instead of max-height */
+}
+
+.combat-log {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    min-height: 250px;
+    /* Ensure minimum height */
+}
+
+/* Ensure proper scrollbar appearance */
+.combat-log::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.combat-log::-webkit-scrollbar-track {
+    background: #333;
+    border-radius: 4px;
+}
+
+.combat-log::-webkit-scrollbar-thumb {
+    background: #666;
+    border-radius: 4px;
+}
+
+.combat-log::-webkit-scrollbar-thumb:hover {
+    background: #888;
+}
+
+.combat-log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.auto-scroll-toggle {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+.auto-scroll-toggle input {
+    margin-right: 0.5rem;
+}
+
+.toggle-label {
+    font-size: 0.8rem;
+    color: #999;
+}
+
+/* Floating Combat Text */
+.floating-text {
+    position: absolute;
+    font-weight: bold;
+    pointer-events: none;
+    z-index: 100;
+    white-space: nowrap;
+    text-shadow: 0px 0px 3px rgba(0, 0, 0, 0.8);
+    animation: float-fade 2s ease-out forwards;
+    font-size: 24px;
+    font-family: 'Press Start 2P';
+}
+
+.floating-text.damage {
+    color: #ff5252;
+}
+
+.floating-text.heal {
+    color: #66bb6a;
+}
+
+.floating-text.buff {
+    color: #03dac6;
+}
+
+.floating-text.debuff {
+    color: #cf6679;
+}
+
+/* Container for status effects */
+.status-effects {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-top: 0.2rem;
+}
+
+/* Base styles for all status effects */
+.status-effect {
+    padding: 0.2rem 0.2rem;
+    border-radius: 4px;
+    font-size: 1rem;
+    background-color: #333;
+}
+
+/* Generic buff/debuff styles (for backwards compatibility) */
+.status-effect.buff {
+    color: #00ac87;
+}
+
+.status-effect.debuff {
+    color: #cf6679;
+}
+
+/* Specific buff styles */
+.status-effect.ironskin {
+    color: #f38825;
+    /* Blue for Ironskin */
+    /* background-color: #775b40; */
+    /* border: 1px solid #000000; */
+}
+
+.status-effect.strength {
+    color: #e74c3c;
+    /* Red for Strength */
+    background-color: #4a1a1a;
+    border: 1px solid #d93b3b;
+}
+
+.status-effect.haste {
+    color: #f1c40f;
+    /* Yellow for Haste */
+    background-color: #4a3e1a;
+    border: 1px solid #d9bc3b;
+}
+
+@keyframes float-fade {
+    0% {
+        opacity: 0;
+        transform: translateY(0) scale(1);
+    }
+
+    20% {
+        opacity: 1;
+        transform: translateY(-10px) scale(1.2);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(-40px) scale(1.8);
+    }
+}
+
+
+.option-name {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.option-description {
+    font-size: 0.8rem;
+    color: #aaa;
+}
+
+/* Character Creation Screen Styles */
+.char-creation-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.class-selection,
+.character-preview {
+    flex: 1;
+    min-width: 300px;
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.class-options {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.class-option {
+    background-color: #333;
+    border-radius: 8px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.class-option:hover {
+    background-color: #444;
+    transform: translateY(-2px);
+}
+
+.class-option.selected {
+    background-color: #3a2953;
+    border: 2px solid #bb86fc;
+}
+
+.class-option h4 {
+    color: #bb86fc;
+    margin-bottom: 0.5rem;
+}
+
+.stat-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    list-style: none;
+}
+
+.stat-preview li {
+    background-color: #222;
+    padding: 0.3rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+#ability-scores-preview {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.ability-score {
+    background-color: #333;
+    padding: 0.5rem;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.ability-name {
+    font-weight: bold;
+    /* color: #bb86fc; */
+}
+
+.ability-mod {
+    color: #03dac6;
+}
+
+.character-details {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #444;
+}
+
+.buttons-container {
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+}
+
+.entity-class {
+    font-size: 0.75rem;
+    color: #bb86fc;
+    margin-bottom: 0.5rem;
+    background-color: #333;
+    display: inline-block;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+}
+
+.player-class {
+    font-size: 0.75rem;
+    color: #bb86fc;
+    background-color: #333;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    margin-left: 0.5rem;
+}
+
+.entity-stat-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.2rem;
+}
+
+.entity-hp,
+.entity-ac,
+.entity-energy {
+    display: inline-block;
+    font-size: 0.9rem;
+}
+
+.entity-hp {
+    color: #ffffff;
+    /* Red for health */
+}
+
+.entity-ac {
+    color: #ffffff;
+    /* Teal for armor class */
+}
+
+.entity-energy {
+    color: #ffffff;
+}
+
+/* Add these CSS rules to public/styles.css */
+.entity-name-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.entity-name {
+    font-weight: bold;
+    color: #ffffff;
+    font-size: 1.3rem;
+}
+
+.entity-class {
+    font-size: 0.9rem;
+    color: #bb86fc;
+    background-color: #333;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    margin-left: 0.5rem;
+}
+
+/* Add to styles.css */
+.class-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.class-option {
+    background-color: #333;
+    border-radius: 8px;
+    padding: 0.8rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.class-option h4 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+.stat-preview {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.3rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.character-abilities {
+    margin-top: 1rem;
+    border-top: 1px solid #444;
+    padding-top: 1rem;
+}
+
+
+.ability-description {
+    font-size: 0.8rem;
+    color: #aaa;
+    margin-left: 0.5rem;
+    margin-top: 0.2rem;
+}
+
+.ability-positive {
+    color: #4CAF50;
+    /* Green for positive values */
+}
+
+.ability-negative {
+    color: #F44336;
+    /* Red for negative values */
+}
+
+#preview-abilities {
+    list-style-type: none;
+    padding-left: 0.5rem;
+}
+
+#preview-abilities li {
+    margin-bottom: 0.5rem;
+    padding: 0.3rem;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.stat-value {
+    font-weight: bold;
+}
+
+.target-info {
+    margin: 0.5rem 0;
+    padding: 0.5rem;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    text-align: center;
+    color: #03dac6;
+    font-size: 0.9rem;
+}
+
+.target-info.hidden {
+    display: none;
+}
