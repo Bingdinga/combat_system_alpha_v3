@@ -113,21 +113,35 @@ export class ComponentFactory {
     return name.charAt(0).toUpperCase() + name.slice(1);
   }
 
-  createAbilityOption(ability, player, onSelect) {
+  createAbilityOption(ability, player, onSelect, index) {
     const optionEl = document.createElement('div');
     optionEl.className = 'selection-option';
     optionEl.setAttribute('data-option-id', ability.id);
 
-    // Create name and description
-    const nameEl = document.createElement('div');
-    nameEl.className = 'option-name';
-    nameEl.textContent = ability.name;
+    // Create container for name that will include the number indicator
+    const nameContainer = document.createElement('div');
+    nameContainer.className = 'option-name';
 
+    // Add number indicator if index is provided
+    if (typeof index === 'number') {
+      const numberIndicator = document.createElement('span');
+      numberIndicator.className = 'number-indicator';
+      numberIndicator.textContent = `${index + 1}. `;
+      nameContainer.appendChild(numberIndicator);
+    }
+
+    // Add ability name to the name container
+    const nameText = document.createElement('span');
+    nameText.textContent = ability.name;
+    nameContainer.appendChild(nameText);
+
+    // Create description element
     const descEl = document.createElement('div');
     descEl.className = 'option-description';
     descEl.textContent = ability.description;
 
-    optionEl.appendChild(nameEl);
+    // Add elements to option
+    optionEl.appendChild(nameContainer);
     optionEl.appendChild(descEl);
 
     // Add click handler

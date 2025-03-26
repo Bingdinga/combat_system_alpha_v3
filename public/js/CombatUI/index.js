@@ -363,6 +363,61 @@ export class CombatUI {
       });
     }
 
+    document.addEventListener('keydown', this.handleKeyPress.bind(this));
+  }
+
+  handleKeyPress(event) {
+    // Only process keyboard shortcuts during active combat and when it's player's turn
+    if (!this.combatManager || !this.combatManager.state.active ||
+      !this.combatManager.currentTurn.isLocalPlayerTurn) {
+      return;
+    }
+
+    const key = event.key;
+
+    // Check if a modal is open
+    const isModalOpen = this.selectionModal.classList.contains('active');
+
+    if (isModalOpen) {
+      // Handle number keys for selection options
+      if (/^[1-9]$/.test(key)) {
+        const index = parseInt(key) - 1;
+        const options = this.selectionOptions.querySelectorAll('.selection-option');
+
+        if (index >= 0 && index < options.length) {
+          // Simulate a click on the corresponding option
+          options[index].click();
+        }
+      } else if (key === 'Escape') {
+        // Escape key cancels the selection
+        this.cancelSelectionBtn.click();
+      }
+    } else {
+      // Main combat controls
+      switch (key) {
+        case '1':
+        case 'Numpad1':
+          // Attack action
+          if (!this.attackBtn.disabled) {
+            this.attackBtn.click();
+          }
+          break;
+        case '2':
+        case 'Numpad2':
+          // Cast spell
+          if (!this.castBtn.disabled) {
+            this.castBtn.click();
+          }
+          break;
+        case '0':
+        case 'Numpad0':
+          // End turn
+          if (!this.endTurnBtn.disabled) {
+            this.endTurnBtn.click();
+          }
+          break;
+      }
+    }
   }
 
   updateTurnDisplay(turnData) {

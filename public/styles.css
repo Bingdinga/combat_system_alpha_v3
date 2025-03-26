@@ -1029,3 +1029,21 @@ input[type="text"]:focus {
         opacity: 1;
     }
 }
+
+/* Add to public/styles.css */
+.number-indicator {
+    display: inline-block;
+    font-weight: bold;
+    color: #bb86fc;
+    margin-right: 0.3rem;
+}
+
+/* Add hints to the action buttons */
+.action-buttons .btn::after {
+    content: attr(data-key);
+    display: inline-block;
+    margin-left: 0.5rem;
+    font-size: 0.8rem;
+    color: #aaa;
+    vertical-align: middle;
+}
