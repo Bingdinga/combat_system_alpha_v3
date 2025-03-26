@@ -162,17 +162,23 @@ export class CombatUI {
   }
 
   updateActionButtons(isPlayerTurn) {
+    // console.log('Updating action buttons, isPlayerTurn:', isPlayerTurn); // Add debug logging
+
     // Enable/disable action buttons based on whose turn it is
     const buttons = [this.attackBtn, this.castBtn, this.endTurnBtn];
 
     buttons.forEach(btn => {
       if (btn) {
+        // console.log(`Button ${btn.id} before: disabled=${btn.disabled}`); // Debug log
+
         // First disable based on turn
         btn.disabled = !isPlayerTurn;
 
         // If it's the player's turn, check other conditions (like sufficient action points)
         if (isPlayerTurn) {
           const localPlayer = this.combatManager.getLocalPlayer();
+          // console.log('Local player:', localPlayer); // Debug log
+
           if (btn === this.attackBtn || btn === this.castBtn) {
             btn.disabled = !localPlayer || localPlayer.actionPoints < 1 || localPlayer.health <= 0;
           }
@@ -181,6 +187,8 @@ export class CombatUI {
             btn.disabled = btn.disabled || localPlayer.energy < 20;
           }
         }
+
+        // console.log(`Button ${btn.id} after: disabled=${btn.disabled}`); // Debug log
       }
     });
   }

@@ -12,7 +12,7 @@ export class Entity {
         this.actionPoints = data.actionPoints || 0;
         this.maxActionPoints = data.maxActionPoints || 3;
         this.actionTimer = data.actionTimer || 0;
-        this.actionRechargeRate = data.actionRechargeRate || 5000;
+        // this.actionRechargeRate = data.actionRechargeRate || 5000;
         this.lastActionTime = data.lastActionTime || Date.now();
 
         // Updated ability scores: direct modifier system
@@ -75,6 +75,8 @@ export class Entity {
         this.maxEnergy = data.maxEnergy;
         this.actionPoints = data.actionPoints;
         this.maxActionPoints = data.maxActionPoints;
+
+        // These aren't needed in turn-based but may be kept for compatibility
         this.actionTimer = data.actionTimer;
         this.lastActionTime = data.lastActionTime;
 
@@ -107,7 +109,7 @@ export class Entity {
             if (registryEntry?.affectedStat === statName) {
                 return modifier + effect.value;
             }
-            
+
             // Legacy fallback
             if (effect.type === `${statName}Buff`) {
                 return modifier + effect.value;
@@ -115,7 +117,7 @@ export class Entity {
             if (effect.type === `${statName}Debuff`) {
                 return modifier - effect.value;
             }
-            
+
             return modifier;
         }, 0);
     }

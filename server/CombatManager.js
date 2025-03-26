@@ -7,9 +7,6 @@ class CombatManager {
     this.io = io;
     this.roomManager = roomManager;
     this.combats = new Map(); // roomId -> combatState
-
-    // Start NPC AI processing loop
-    // setInterval(() => this.processNpcAi(), 1000);
   }
 
   // Initialize a new combat for a room
@@ -327,13 +324,13 @@ class CombatManager {
     const enemyCount = playerCount; // Previously: Math.max(1, Math.floor(playerCount * 1.5));
     const enemies = [];
 
-    const enemyRechargeMult = 3;
+    // const enemyRechargeMult = 3;
 
     const enemyTypes = [
       {
         name: 'Goblin',
         health: 30,
-        actionRechargeRate: 7000 * enemyRechargeMult,
+        // actionRechargeRate: 7000 * enemyRechargeMult,
         abilityScores: {
           strength: 3,
           dexterity: 2,
@@ -346,7 +343,7 @@ class CombatManager {
       {
         name: 'Orc',
         health: 50,
-        actionRechargeRate: 9000 * enemyRechargeMult,
+        // actionRechargeRate: 9000 * enemyRechargeMult,
         abilityScores: {
           strength: 3,
           dexterity: 2,
@@ -359,7 +356,7 @@ class CombatManager {
       {
         name: 'Troll',
         health: 70,
-        actionRechargeRate: 13000 * enemyRechargeMult,
+        // actionRechargeRate: 13000 * enemyRechargeMult,
         abilityScores: {
           strength: 5,
           dexterity: -1,
@@ -533,97 +530,97 @@ class CombatManager {
     return result;
   }
 
-  // NPC AI processing loop
-  processNpcAi() {
-    // Process each active combat
-    console.log("[SERVER] Running NPC AI processing");
-    for (const [roomId, combat] of this.combats.entries()) {
-      if (!combat.active) continue;
+  // // NPC AI processing loop
+  // processNpcAi() {
+  //   // Process each active combat
+  //   console.log("[SERVER] Running NPC AI processing");
+  //   for (const [roomId, combat] of this.combats.entries()) {
+  //     if (!combat.active) continue;
 
-      let updated = false;
+  //     let updated = false;
 
-      // Update action points for all entities
-      const now = Date.now();
-      combat.entities.forEach(entity => {
-        // Calculate time since last action
-        const timeSinceLastAction = now - entity.lastActionTime;
+  //     // Update action points for all entities
+  //     const now = Date.now();
+  //     combat.entities.forEach(entity => {
+  //       // Calculate time since last action
+  //       const timeSinceLastAction = now - entity.lastActionTime;
 
-        // Calculate accumulated action points 
-        const newActionPoints = entity.actionPoints + (timeSinceLastAction / entity.actionRechargeRate);
+  //       // Calculate accumulated action points 
+  //       const newActionPoints = entity.actionPoints + (timeSinceLastAction / entity.actionRechargeRate);
 
-        // Update action points, capped at max
-        const previousActionPoints = entity.actionPoints;
-        entity.actionPoints = Math.min(entity.maxActionPoints, newActionPoints);
+  //       // Update action points, capped at max
+  //       const previousActionPoints = entity.actionPoints;
+  //       entity.actionPoints = Math.min(entity.maxActionPoints, newActionPoints);
 
-        // Update last action time if action points changed
-        if (entity.actionPoints !== previousActionPoints) {
-          entity.lastActionTime = now - (timeSinceLastAction % entity.actionRechargeRate);
-          updated = true;
-        }
+  //       // Update last action time if action points changed
+  //       if (entity.actionPoints !== previousActionPoints) {
+  //         entity.lastActionTime = now - (timeSinceLastAction % entity.actionRechargeRate);
+  //         updated = true;
+  //       }
 
-        // Process status effect durations
-        entity.statusEffects = entity.statusEffects.filter(effect => {
-          // Keep effects that still have duration left
-          return effect.duration > 0;
-        });
-      });
+  //       // Process status effect durations
+  //       entity.statusEffects = entity.statusEffects.filter(effect => {
+  //         // Keep effects that still have duration left
+  //         return effect.duration > 0;
+  //       });
+  //     });
 
-      // Process NPC actions
-      const enemies = combat.entities.filter(entity => entity.type === 'enemy' && entity.health > 0);
-      const players = combat.entities.filter(entity => entity.type === 'player' && entity.health > 0);
+  //     // Process NPC actions
+  //     const enemies = combat.entities.filter(entity => entity.type === 'enemy' && entity.health > 0);
+  //     const players = combat.entities.filter(entity => entity.type === 'player' && entity.health > 0);
 
-      // Skip if no valid targets
-      if (players.length === 0 || enemies.length === 0) {
-        this.checkCombatEnd(combat);
-        continue;
-      }
+  //     // Skip if no valid targets
+  //     if (players.length === 0 || enemies.length === 0) {
+  //       this.checkCombatEnd(combat);
+  //       continue;
+  //     }
 
-      // Process each enemy
-      enemies.forEach(enemy => {
-        // Skip if no action points
-        if (enemy.actionPoints < 1) return;
+  //     // Process each enemy
+  //     enemies.forEach(enemy => {
+  //       // Skip if no action points
+  //       if (enemy.actionPoints < 1) return;
 
-        // Select a random player as target
-        const randomPlayer = players[Math.floor(Math.random() * players.length)];
+  //       // Select a random player as target
+  //       const randomPlayer = players[Math.floor(Math.random() * players.length)];
 
-        // Perform attack
-        const actionData = {
-          type: 'attack',
-          targetId: randomPlayer.id
-        };
+  //       // Perform attack
+  //       const actionData = {
+  //         type: 'attack',
+  //         targetId: randomPlayer.id
+  //       };
 
-        const result = this.processAction(combat, enemy, actionData);
-        if (result) {
-          // Use an action point
-          enemy.actionPoints -= 1;
-          enemy.lastActionTime = now;
+  //       const result = this.processAction(combat, enemy, actionData);
+  //       if (result) {
+  //         // Use an action point
+  //         enemy.actionPoints -= 1;
+  //         enemy.lastActionTime = now;
 
-          // Add detailed log entry
-          combat.log.push({
-            time: now,
-            actor: result.actorName,
-            actorId: result.actorId,
-            actorType: 'enemy',
-            action: 'attack',
-            target: result.targetName,
-            targetId: result.targetId,
-            message: result.message,
-            details: result.details
-          });
+  //         // Add detailed log entry
+  //         combat.log.push({
+  //           time: now,
+  //           actor: result.actorName,
+  //           actorId: result.actorId,
+  //           actorType: 'enemy',
+  //           action: 'attack',
+  //           target: result.targetName,
+  //           targetId: result.targetId,
+  //           message: result.message,
+  //           details: result.details
+  //         });
 
-          updated = true;
-        }
-      });
+  //         updated = true;
+  //       }
+  //     });
 
-      // Check combat end conditions
-      this.checkCombatEnd(combat);
+  //     // Check combat end conditions
+  //     this.checkCombatEnd(combat);
 
-      // Send updates if needed
-      if (updated && combat.active) {
-        this.io.to(roomId).emit('combatUpdated', combat);
-      }
-    }
-  }
+  //     // Send updates if needed
+  //     if (updated && combat.active) {
+  //       this.io.to(roomId).emit('combatUpdated', combat);
+  //     }
+  //   }
+  // }
 
   // Check if combat has ended
   checkCombatEnd(combat) {
@@ -644,9 +641,6 @@ class CombatManager {
     }
 
     if (shouldEndCombat) {
-      // Send a final state update before ending combat
-      this.io.to(combat.roomId).emit('combatUpdated', combat);
-
       // Add a small delay before actually ending the combat
       // This gives clients time to process the final state
       setTimeout(() => {

@@ -70,6 +70,16 @@ export class SocketManager {
       console.log('Combat ended:', data.result);
       this.triggerEvent('combatEnded', data);
     });
+
+    this.socket.on('turnChanged', (data) => {
+      console.log('Received turnChanged event:', data); // Add debug logging
+      this.triggerEvent('turnChanged', data);
+    });
+
+    this.socket.on('turnEnded', (data) => {
+      console.log('Received turnEnded event:', data); // Add debug logging
+      this.triggerEvent('turnEnded', data);
+    });
   }
 
   // Register event callback

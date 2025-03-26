@@ -88,11 +88,16 @@ export class CombatManager {
         console.log('[CLIENT] Initializing CombatUI with combat state');
         this.combatUI.initializeCombat(combatState);
     }
-
     handleTurnChanged(turnData) {
+        console.log('Turn changed event received:', turnData); // Add debug logging
+        console.log('Local player ID:', this.socketManager.getSocketId()); // Check local player ID
+
         // Update turn state
         this.currentTurn.entityId = turnData.entityId;
         this.currentTurn.isLocalPlayerTurn = turnData.entityId === this.socketManager.getSocketId();
+
+        console.log('Is local player turn?', this.currentTurn.isLocalPlayerTurn); // Debug log
+
         this.currentTurn.round = turnData.round;
         this.currentTurn.turnStartTime = Date.now();
         this.currentTurn.turnIndex = turnData.turnIndex;
@@ -144,8 +149,12 @@ export class CombatManager {
             this.processLogEntries(newLogEntries);
         }
 
-        // Update action points UI
+        // Update action points UI - IMPORTANT: Pass the correct turn information!
         this.combatUI.updateActionPoints();
+
+        // THIS IS THE FIX: Update action buttons with the correct turn information
+        // Use the stored turn state instead of setting it to undefined
+        this.combatUI.updateActionButtons(this.currentTurn.isLocalPlayerTurn);
     }
 
     processLogEntries(logEntries) {
@@ -278,6 +287,16 @@ export class CombatManager {
             // Show results screen
             this.showResultScreen();
         }, 300);
+    }
+
+    endTurn() {
+        if (!this.state.active || !this.currentTurn.isLocalPlayerTurn) return;
+
+        // Send end turn request to server
+        this.socketManager.endTurn();
+
+        // Disable action buttons immediately for better UI feedback
+        this.combatUI.updateActionButtons(false);
     }
 
     // Show results screen
