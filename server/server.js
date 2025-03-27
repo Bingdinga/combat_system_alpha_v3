@@ -6,7 +6,7 @@ const socketIo = require('socket.io');
 // Import managers
 const RoomManager = require('./RoomManager');
 const CombatManager = require('./CombatManager');
-const { CharacterClasses } = require('./GameClasses');
+const { CharacterClasses, CharacterFeats } = require('./GameClasses');
 const { getAllAbilities, getAbilitiesForClass } = require('./Abilities');
 
 
@@ -24,6 +24,11 @@ app.get('/api/classes', (req, res) => {
 // API route to get all abilities
 app.get('/api/abilities', (req, res) => {
   res.json(getAllAbilities());
+});
+
+// API route to get all feats
+app.get('/api/feats', (req, res) => {
+  res.json(CharacterFeats);
 });
 
 // API route to get abilities for a specific class

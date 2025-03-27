@@ -14,6 +14,7 @@ const CharacterClasses = {
         baseAC: 17,
         baseHealth: 70,
         abilities: ['attack', 'secondWind'],
+        availableFeats: ['WEAPON_MASTER', 'TOUGH'],
         hitDie: 10
     },
     WIZARD: {
@@ -30,6 +31,7 @@ const CharacterClasses = {
         baseAC: 12,
         baseHealth: 40,
         abilities: ['attack', 'fireball', 'shield'],
+        availableFeats: ['SPELLPOWER', 'WAR_CASTER'],
         hitDie: 6
     },
     CLERIC: {  // Added new class to replace Rogue
@@ -46,6 +48,7 @@ const CharacterClasses = {
         baseAC: 15,
         baseHealth: 60,
         abilities: ['attack', 'heal', 'divineSmite'],
+        availableFeats: ['HEALER', 'TOUGH'],
         hitDie: 8
     }
 };

@@ -27,6 +27,7 @@ const backToLoginBtn = document.getElementById('back-to-login-btn');
 const createCharacterBtn = document.getElementById('create-character-btn');
 const classOptions = document.querySelectorAll('.class-option');
 let selectedClass = null;
+let CharacterFeats = {};
 
 // Initialize application
 function initialize() {
@@ -38,6 +39,13 @@ function initialize() {
 
   // Setup Socket.io event listeners - make sure this line is here!
   setupSocketListeners();
+
+  Promise.all([
+    fetchCharacterClasses(),
+    fetchCharacterFeats()
+  ]).then(() => {
+    console.log('Character data loaded');
+  });
 
   // Show login form
   showLoginForm();
@@ -338,6 +346,44 @@ async function fetchClass(className) {
   }
 }
 
+async function fetchCharacterFeats() {
+  try {
+    const response = await fetch('/api/feats');
+
+    // Check if the response is OK before parsing
+    if (!response.ok) {
+      console.error('Feats API returned error:', response.status);
+      return {};
+    }
+
+    const feats = await response.json();
+    console.log('Feats data loaded:', Object.keys(feats).length); // Add debugging
+    CharacterFeats = feats; // Update the variable
+    return feats;
+  } catch (error) {
+    console.error('Error fetching character feats:', error);
+    // Return a fallback with some minimal data so the UI doesn't break
+    return {
+      WEAPON_MASTER: {
+        id: 'WEAPON_MASTER',
+        name: 'Weapon Master',
+        description: 'Extensive training with weapons provides greater combat effectiveness.',
+        bonuses: { abilityScores: { strength: 1 } },
+        abilities: [],
+        passiveEffects: ['increaseCritRange']
+      },
+      TOUGH: {
+        id: 'TOUGH',
+        name: 'Tough',
+        description: 'Your health is bolstered beyond normal limits.',
+        bonuses: { health: 10 },
+        abilities: [],
+        passiveEffects: []
+      }
+    };
+  }
+}
+
 function getSelectedFeats() {
   const selectedFeats = [];
   const checkboxes = document.querySelectorAll('.feat-select input[type="checkbox"]:checked');
@@ -348,7 +394,7 @@ function getSelectedFeats() {
       selectedFeats.push(featId);
     }
   });
-  
+
   console.log('Selected feats:', selectedFeats); // Debugging log
   return selectedFeats;
 }
@@ -527,39 +573,41 @@ function generateClassOptions() {
   }
 }
 
+// Modify the generateFeatOptions function to add more debugging
 function generateFeatOptions(className) {
   const featContainer = document.getElementById('feat-options');
   featContainer.innerHTML = '';
 
+  // Add debugging to check available feats
+  console.log(`Generating feats for class: ${className}`);
+  console.log(`Class data:`, CharacterClasses[className]);
+
   // Get available feats for the class
   const availableFeats = CharacterClasses[className]?.availableFeats || [];
+  console.log(`Available feats for ${className}:`, availableFeats);
 
   if (!className) {
     featContainer.innerHTML = '<p>Please select a class first</p>';
     return;
   }
 
-  // if (!CharacterClasses[className]) {
-  //   try {
-  //     await fetchCharacterClasses();
-  //   } catch (error) {
-  //     console.error('Error fetching class data:', error);
-  //     featContainer.innerHTML = '<p>Error loading feats. Please try again.</p>';
-  //     return;
-  //   }
-  // }
-
-  let CharacterFeats;
-  
-
   if (availableFeats.length === 0) {
     featContainer.innerHTML = '<p>No feats available for this class</p>';
     return;
   }
 
+  // Log the CharacterFeats object to make sure it's populated
+  console.log('Full feats data:', CharacterFeats);
+
+  // Continue rendering feats...
   availableFeats.forEach(featId => {
+    console.log(`Processing feat: ${featId}, data:`, CharacterFeats[featId]);
+
     const feat = CharacterFeats[featId];
-    if (!feat) return;
+    if (!feat) {
+      console.warn(`Feat ${featId} not found in CharacterFeats data`);
+      return;
+    }
 
     const featOption = document.createElement('div');
     featOption.className = 'feat-option';
@@ -592,14 +640,14 @@ function generateFeatOptions(className) {
     }
 
     // Add abilities granted
-    if (feat.abilities.length > 0) {
+    if (feat.abilities && feat.abilities.length > 0) {
       const abilitiesItem = document.createElement('li');
       abilitiesItem.textContent = `New Abilities: ${feat.abilities.join(', ')}`;
       bonusList.appendChild(abilitiesItem);
     }
 
     // Add passive effects
-    if (feat.passiveEffects.length > 0) {
+    if (feat.passiveEffects && feat.passiveEffects.length > 0) {
       const passivesItem = document.createElement('li');
       passivesItem.textContent = `Passive Effects: ${feat.passiveEffects.join(', ')}`;
       bonusList.appendChild(passivesItem);
