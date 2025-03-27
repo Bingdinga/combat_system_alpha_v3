@@ -117,13 +117,13 @@ export class SocketManager {
     }
   }
 
-  joinRoom(username, roomId, characterClass) {
+  joinRoom(username, roomId, characterClass, feats = []) {
     if (!username || !roomId) {
       console.error('Username and room ID required');
       return;
     }
 
-    this.socket.emit('joinRoom', { username, roomId, characterClass });
+    this.socket.emit('joinRoom', { username, roomId, characterClass, feats});
   }
 
   leaveRoom() {

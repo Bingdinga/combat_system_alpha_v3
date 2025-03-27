@@ -35,7 +35,7 @@ function initialize() {
 
   // Setup UI event listeners
   setupEventListeners();
-  
+
   // Setup Socket.io event listeners - make sure this line is here!
   setupSocketListeners();
 
@@ -89,6 +89,8 @@ function setupEventListeners() {
       // Store selected class
       selectedClass = option.getAttribute('data-class');
 
+      generateFeatOptions(selectedClass);
+
       // Update character preview
       updateCharacterPreview(selectedClass);
 
@@ -109,8 +111,10 @@ function setupEventListeners() {
       return;
     }
 
+    const selectedFeats = getSelectedFeats();
+
     // Join room with character class
-    socketManager.joinRoom(username, roomId, selectedClass);
+    socketManager.joinRoom(username, roomId, selectedClass, selectedFeats);
   });
 }
 
@@ -143,7 +147,7 @@ async function updateCharacterPreview(className) {
 
   if (!className) {
     // Default values
-    const abilities = ['STR', 'DEX', 'CON', 'INT', 'WIS'];
+    const abilities = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'];
     abilities.forEach(ability => {
       const abilityElement = abilityScoresPreview.querySelector(
         `.ability-score:nth-child(${abilities.indexOf(ability) + 1})`);
@@ -169,7 +173,7 @@ async function updateCharacterPreview(className) {
   // Update ability scores
   for (const [ability, value] of Object.entries(classTemplate.baseAbilityScores)) {
     const abilityShort = ability.substring(0, 3).toUpperCase();
-    const abilityIndex = ['STR', 'DEX', 'CON', 'INT', 'WIS'].indexOf(abilityShort);
+    const abilityIndex = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'].indexOf(abilityShort);
 
     if (abilityIndex !== -1) {
       const abilityElement = abilityScoresPreview.querySelector(
@@ -206,6 +210,78 @@ async function updateCharacterPreview(className) {
   const hp = baseHP + constitution;
 
   previewHP.textContent = hp;
+
+  // Get selected feats
+  const selectedFeats = getSelectedFeats();
+
+  // Apply feat bonuses to character preview
+  if (selectedFeats.length > 0) {
+    // Create a copy of the base ability scores
+    const modifiedScores = { ...classTemplate.baseAbilityScores };
+    let additionalHealth = 0;
+
+    // Apply feat bonuses
+    selectedFeats.forEach(featId => {
+      const feat = CharacterFeats[featId];
+      if (feat) {
+        // Apply ability score bonuses
+        if (feat.bonuses.abilityScores) {
+          for (const [stat, bonus] of Object.entries(feat.bonuses.abilityScores)) {
+            modifiedScores[stat] = (modifiedScores[stat] || 0) + bonus;
+          }
+        }
+
+        // Apply health bonus
+        if (feat.bonuses.health) {
+          additionalHealth += feat.bonuses.health;
+        }
+      }
+    });
+
+    // Update ability score display with modified values
+    for (const [ability, value] of Object.entries(classTemplate.baseAbilityScores)) {
+      const abilityShort = ability.substring(0, 3).toUpperCase();
+      const abilityIndex = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'].indexOf(abilityShort);
+
+      if (abilityIndex !== -1) {
+        const abilityElement = abilityScoresPreview.querySelector(
+          `.ability-score:nth-child(${abilityIndex + 1})`);
+        const valueElement = abilityElement.querySelector('.ability-value');
+
+        // Clear any existing classes
+        valueElement.className = 'ability-value';
+
+        // Set the formatted text with proper color
+        if (value > 0) {
+          valueElement.classList.add('ability-positive');
+          valueElement.textContent = '+' + value;
+        } else if (value < 0) {
+          valueElement.classList.add('ability-negative');
+          valueElement.textContent = value; // Already has minus sign
+        } else {
+          valueElement.textContent = '0';
+        }
+      }
+    }
+
+    // Update HP with additional health from feats
+    const baseHP = parseInt(previewHP.textContent);
+    previewHP.textContent = (baseHP + additionalHealth).toString();
+
+    // Show selected feats in preview
+    const featsPreview = document.getElementById('preview-feats');
+    if (featsPreview) {
+      featsPreview.innerHTML = '';
+      selectedFeats.forEach(featId => {
+        const feat = CharacterFeats[featId];
+        if (feat) {
+          const featItem = document.createElement('li');
+          featItem.textContent = feat.name;
+          featsPreview.appendChild(featItem);
+        }
+      });
+    }
+  }
 
   // Update abilities list if the element exists
   if (previewAbilities && classTemplate.abilities) {
@@ -260,6 +336,21 @@ async function fetchClass(className) {
     console.error(`Error fetching class ${className}:`, error);
     return null;
   }
+}
+
+function getSelectedFeats() {
+  const selectedFeats = [];
+  const checkboxes = document.querySelectorAll('.feat-select input[type="checkbox"]:checked');
+
+  checkboxes.forEach(checkbox => {
+    const featId = checkbox.getAttribute('data-feat-id');
+    if (featId) {
+      selectedFeats.push(featId);
+    }
+  });
+  
+  console.log('Selected feats:', selectedFeats); // Debugging log
+  return selectedFeats;
 }
 
 // Setup Socket.io event listeners
@@ -434,6 +525,109 @@ function generateClassOptions() {
 
     container.appendChild(classOption);
   }
+}
+
+function generateFeatOptions(className) {
+  const featContainer = document.getElementById('feat-options');
+  featContainer.innerHTML = '';
+
+  // Get available feats for the class
+  const availableFeats = CharacterClasses[className]?.availableFeats || [];
+
+  if (!className) {
+    featContainer.innerHTML = '<p>Please select a class first</p>';
+    return;
+  }
+
+  // if (!CharacterClasses[className]) {
+  //   try {
+  //     await fetchCharacterClasses();
+  //   } catch (error) {
+  //     console.error('Error fetching class data:', error);
+  //     featContainer.innerHTML = '<p>Error loading feats. Please try again.</p>';
+  //     return;
+  //   }
+  // }
+
+  let CharacterFeats;
+  
+
+  if (availableFeats.length === 0) {
+    featContainer.innerHTML = '<p>No feats available for this class</p>';
+    return;
+  }
+
+  availableFeats.forEach(featId => {
+    const feat = CharacterFeats[featId];
+    if (!feat) return;
+
+    const featOption = document.createElement('div');
+    featOption.className = 'feat-option';
+    featOption.setAttribute('data-feat-id', featId);
+
+    const nameHeader = document.createElement('h5');
+    nameHeader.textContent = feat.name;
+
+    const description = document.createElement('p');
+    description.className = 'feat-description';
+    description.textContent = feat.description;
+
+    const bonusList = document.createElement('ul');
+    bonusList.className = 'feat-bonuses';
+
+    // Add ability score bonuses
+    if (feat.bonuses.abilityScores) {
+      for (const [stat, bonus] of Object.entries(feat.bonuses.abilityScores)) {
+        const bonusItem = document.createElement('li');
+        bonusItem.textContent = `+${bonus} ${stat.toUpperCase()}`;
+        bonusList.appendChild(bonusItem);
+      }
+    }
+
+    // Add health bonus
+    if (feat.bonuses.health) {
+      const bonusItem = document.createElement('li');
+      bonusItem.textContent = `+${feat.bonuses.health} HP`;
+      bonusList.appendChild(bonusItem);
+    }
+
+    // Add abilities granted
+    if (feat.abilities.length > 0) {
+      const abilitiesItem = document.createElement('li');
+      abilitiesItem.textContent = `New Abilities: ${feat.abilities.join(', ')}`;
+      bonusList.appendChild(abilitiesItem);
+    }
+
+    // Add passive effects
+    if (feat.passiveEffects.length > 0) {
+      const passivesItem = document.createElement('li');
+      passivesItem.textContent = `Passive Effects: ${feat.passiveEffects.join(', ')}`;
+      bonusList.appendChild(passivesItem);
+    }
+
+    // Create checkbox for selection
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.id = `feat-${featId}`;
+    checkbox.setAttribute('data-feat-id', featId);
+
+    const label = document.createElement('label');
+    label.htmlFor = `feat-${featId}`;
+    label.textContent = 'Select';
+
+    const checkboxContainer = document.createElement('div');
+    checkboxContainer.className = 'feat-select';
+    checkboxContainer.appendChild(checkbox);
+    checkboxContainer.appendChild(label);
+
+    // Append all elements
+    featOption.appendChild(nameHeader);
+    featOption.appendChild(description);
+    featOption.appendChild(bonusList);
+    featOption.appendChild(checkboxContainer);
+
+    featContainer.appendChild(featOption);
+  });
 }
 
 // Initialize application when DOM is ready

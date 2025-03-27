@@ -35,33 +35,64 @@ class CombatManager {
           dexterity: 0,
           constitution: 0,
           intelligence: 0,
-          wisdom: 0
+          wisdom: 0,
+          charisma: 0
         },
         baseAC: 10,
         abilities: []
       };
 
-      // Use ability scores directly as modifiers
-      const strMod = classTemplate.baseAbilityScores.strength;
-      const dexMod = classTemplate.baseAbilityScores.dexterity;
-      const conMod = classTemplate.baseAbilityScores.constitution;
-      const intMod = classTemplate.baseAbilityScores.intelligence;
-      const wisMod = classTemplate.baseAbilityScores.wisdom;
+      const abilityScores = { ...classTemplate.baseAbilityScores };
 
-      // Set base HP according to class with the new values
+      // Initialize array for abilities and passive effects
+      let abilities = [...classTemplate.abilities];
+      let passiveEffects = [];
+
+      // Set base HP according to class
       let baseHP = 50; // Default
       if (player.characterClass === 'FIGHTER') baseHP = 70;
       else if (player.characterClass === 'WIZARD') baseHP = 40;
-      else if (player.characterClass === 'ROGUE') baseHP = 50;
+      else if (player.characterClass === 'CLERIC') baseHP = 60;
 
-      // Add constitution directly to base HP
-      const maxHealth = baseHP + conMod;
+      // Apply feats if player has any
+      if (player.feats && Array.isArray(player.feats)) {
+        player.feats.forEach(featId => {
+          const feat = CharacterFeats[featId];
+          if (feat) {
+            // Apply ability score bonuses
+            if (feat.bonuses.abilityScores) {
+              for (const [stat, bonus] of Object.entries(feat.bonuses.abilityScores)) {
+                abilityScores[stat] = (abilityScores[stat] || 0) + bonus;
+              }
+            }
+
+            // Apply health bonus
+            if (feat.bonuses.health) {
+              baseHP += feat.bonuses.health;
+            }
+
+            // Add feat abilities
+            if (feat.abilities.length > 0) {
+              abilities = [...abilities, ...feat.abilities];
+            }
+
+            // Add passive effects
+            if (feat.passiveEffects.length > 0) {
+              passiveEffects = [...passiveEffects, ...feat.passiveEffects];
+            }
+          }
+        });
+      }
+
+      // Add constitution modifier to base HP
+      const maxHealth = baseHP + (abilityScores.constitution || 0);
 
       return {
         id: player.id,
         name: player.username,
         type: 'player',
         characterClass: player.characterClass,
+        feats: player.feats || [],
         health: maxHealth,
         maxHealth: maxHealth,
         energy: 100,
@@ -69,10 +100,11 @@ class CombatManager {
         actionPoints: 3.0,
         maxActionPoints: 3,
         actionTimer: 0,
-        // actionRechargeRate: 5000, // 5 seconds per action point
         lastActionTime: Date.now(),
-        abilityScores: { ...classTemplate.baseAbilityScores },
+        abilityScores: abilityScores,
         ac: classTemplate.baseAC,
+        abilities: abilities,
+        passiveEffects: passiveEffects,
         statusEffects: []
       };
     });

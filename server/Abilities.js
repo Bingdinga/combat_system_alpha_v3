@@ -1,6 +1,7 @@
 // server/Abilities.js
 
 const { v4: uuidv4 } = require('uuid');
+const { applyPassiveEffect } = require('./PassiveEffects');
 
 // Base Ability class
 class GameAbility {
@@ -107,39 +108,53 @@ const AbilityRegistry = {
     }
   },
 
-  // Sneak Attack
-  sneakAttack: {
-    id: 'sneakAttack',
-    name: 'Sneak Attack',
-    description: 'Deal extra damage when you have advantage on an attack',
-    energyCost: 0, // Passive ability
+  divineSmite: {
+    id: 'divineSmite',
+    name: 'Divine Smite',
+    description: 'Channel divine energy to smite your foes with holy power',
+    energyCost: 20,
     targetType: 'enemy',
     clientData: {
-      id: 'sneakAttack',
-      name: 'Sneak Attack',
-      description: 'Deal extra damage when you have advantage on an attack',
-      energyCost: 0,
+      id: 'divineSmite',
+      name: 'Divine Smite',
+      description: 'Channel divine energy to smite your foes with holy power',
+      energyCost: 20,
       targetType: 'enemy',
-      type: 'passive'
+      type: 'cast'
     }
   },
 
-  // Evasion (Rogue ability)
-  evasion: {
-    id: 'evasion',
-    name: 'Evasion',
-    description: 'Avoid damage from area effects with a successful Dexterity save',
-    energyCost: 0, // Passive ability
-    targetType: 'self',
+  counterspell: {
+    id: 'counterspell',
+    name: 'Counterspell',
+    description: 'Counter an enemy spell before it takes effect',
+    energyCost: 15,
+    targetType: 'enemy',
     clientData: {
-      id: 'evasion',
-      name: 'Evasion',
-      description: 'Avoid damage from area effects with a successful Dexterity save',
-      energyCost: 0,
-      targetType: 'self',
-      type: 'passive'
+      id: 'counterspell',
+      name: 'Counterspell',
+      description: 'Counter an enemy spell before it takes effect',
+      energyCost: 15,
+      targetType: 'enemy',
+      type: 'cast'
+    }
+  },
+  massHeal: {
+    id: 'massHeal',
+    name: 'Mass Heal',
+    description: 'Heal all allies for a small amount',
+    energyCost: 30,
+    targetType: 'all',
+    clientData: {
+      id: 'massHeal',
+      name: 'Mass Heal',
+      description: 'Heal all allies for a small amount',
+      energyCost: 30,
+      targetType: 'all',
+      type: 'cast'
     }
   }
+
 };
 
 // Define handlers for server-side execution
@@ -169,8 +184,13 @@ const abilityHandlers = {
 
     const baseDamage = (10 + attackModifier);
 
+    // Apply passive effects to determine critical hit
+    // Check if actor has increaseCritRange passive
+    const criticalRoll = applyPassiveEffect(actor, 'modifyAttackRoll', d20Roll, actor);
+    const isCritical = criticalRoll.isCritical || d20Roll === 20;
+
     // Critical hit on natural 20
-    if (d20Roll === 20) {
+    if (isCritical) {
       // Calculate critical damage (double dice)
       const damage = Math.floor(baseDamage * 2);
       // Apply damage to target
@@ -233,7 +253,7 @@ const abilityHandlers = {
     const d20Roll = Math.floor(Math.random() * 20) + 1;
 
     // Use intelligence for wizards, wisdom otherwise
-    const spellAbility = actor.characterClass === 'WIZARD' ? 'intelligence' : 'wisdom';
+    const spellAbility = 'intelligence';
     const spellAbilityMod = actor.abilityScores[spellAbility];
 
     // Create base result details
@@ -252,7 +272,9 @@ const abilityHandlers = {
     // Roll 2d6 for base damage
     const damageRoll1 = Math.floor(Math.random() * 6) + 1;
     const damageRoll2 = Math.floor(Math.random() * 6) + 1;
-    const baseDamage = damageRoll1 + damageRoll2 + spellAbilityMod;
+    let baseDamage = damageRoll1 + damageRoll2 + spellAbilityMod;
+
+    baseDamage = applyPassiveEffect(actor, 'modifySpellDamage', baseDamage, actor);
 
     // Critical hit on natural 20
     if (d20Roll === 20) {
@@ -380,7 +402,8 @@ const abilityHandlers = {
     // Roll 1d4 + wisdom for healing
     const healRoll = Math.floor(Math.random() * 4) + 1;
     const healModifier = actor.abilityScores.wisdom;
-    const healAmount = Math.max(1, healRoll + healModifier); // Minimum 1 HP healed
+    let healAmount = Math.max(1, healRoll + healModifier); // Minimum 1 HP healed
+    healAmount = applyPassiveEffect(actor, 'modifyHealAmount', healAmount, actor);
 
     // Store original health for reporting
     const originalHealth = target.health;
@@ -457,27 +480,160 @@ const abilityHandlers = {
     };
   },
 
-  // Rogue's Sneak Attack (passive ability)
-  sneakAttack: function (combat, actor, target) {
-    // This is a passive ability that modifies attacks rather than being directly activated
-    return {
-      message: `Sneak Attack is a passive ability that triggers automatically during attacks.`,
+  divineSmite: function (combat, actor, target) {
+    // Check energy cost
+    if (actor.energy < 20) {
+      return {
+        message: `${actor.name} doesn't have enough energy to cast Divine Smite!`,
+        details: { failed: true }
+      };
+    }
+
+    // Consume energy
+    actor.energy -= 20;
+
+    // Roll damage based on wisdom
+    const d8Roll1 = Math.floor(Math.random() * 8) + 1;
+    const d8Roll2 = Math.floor(Math.random() * 8) + 1;
+    const wisdomMod = actor.abilityScores.wisdom;
+    const baseDamage = d8Roll1 + d8Roll2 + wisdomMod;
+
+    // Spell attack roll
+    const d20Roll = Math.floor(Math.random() * 20) + 1;
+    const attackBonus = wisdomMod;
+    const attackRoll = d20Roll + attackBonus;
+    const targetAC = target.ac || 10;
+
+    // Create result object
+    const result = {
       details: {
-        isPassive: true
+        spellType: 'divineSmite',
+        d20Roll: d20Roll,
+        attackBonus: attackBonus,
+        totalAttackRoll: attackRoll,
+        targetAC: targetAC,
+        energyCost: 20,
+        actorEnergyBefore: actor.energy + 20,
+        actorEnergyAfter: actor.energy
+      }
+    };
+
+    // Critical hit on natural 20
+    if (d20Roll === 20) {
+      const critDamage = baseDamage * 2;
+      target.health = Math.max(0, target.health - critDamage);
+
+      result.details.damage = critDamage;
+      result.details.isCritical = true;
+      result.details.targetHealthBefore = target.health + critDamage;
+      result.details.targetHealthAfter = target.health;
+
+      result.message = `${actor.name} rolled a natural 20! Critical Divine Smite hits ${target.name} for ${critDamage} radiant damage!`;
+    }
+    // Critical failure on natural 1
+    else if (d20Roll === 1) {
+      result.details.isCriticalFail = true;
+      result.message = `${actor.name} rolled a natural 1! The Divine Smite dissipates harmlessly!`;
+    }
+    // Normal hit/miss
+    else if (attackRoll >= targetAC) {
+      const damage = baseDamage;
+      target.health = Math.max(0, target.health - damage);
+
+      result.details.damage = damage;
+      result.details.isHit = true;
+      result.details.targetHealthBefore = target.health + damage;
+      result.details.targetHealthAfter = target.health;
+
+      result.message = `${actor.name}'s Divine Smite hits ${target.name} for ${damage} radiant damage!`;
+    }
+    else {
+      result.details.isHit = false;
+      result.message = `${actor.name} rolled ${attackRoll} vs AC ${targetAC} and missed ${target.name} with Divine Smite!`;
+    }
+
+    return result;
+  },
+
+  counterspell: function (combat, actor, target) {
+    // Check energy cost
+    if (actor.energy < 15) {
+      return {
+        message: `${actor.name} doesn't have enough energy to cast Counterspell!`,
+        details: { failed: true }
+      };
+    }
+
+    // Consume energy
+    actor.energy -= 15;
+
+    return {
+      message: `${actor.name} casts Counterspell, ready to counter the next enemy spell!`,
+      details: {
+        spellType: 'counterspell',
+        energyCost: 15,
+        actorEnergyBefore: actor.energy + 15,
+        actorEnergyAfter: actor.energy
       }
     };
   },
 
-  // Rogue's Evasion (passive ability)
-  evasion: function (combat, actor, target) {
-    // This is a passive ability that helps with saving throws
+  massHeal: function (combat, actor, target) {
+    // Check energy cost
+    if (actor.energy < 30) {
+      return {
+        message: `${actor.name} doesn't have enough energy to cast Mass Heal!`,
+        details: { failed: true }
+      };
+    }
+
+    // Consume energy
+    actor.energy -= 30;
+
+    // Calculate healing amount (smaller than regular heal but affects all)
+    const healRoll = Math.floor(Math.random() * 4) + 1;
+    const wisdomMod = actor.abilityScores.wisdom;
+    const healAmount = Math.max(1, healRoll + wisdomMod); // Minimum 1 HP healed
+
+    // Get all allies (including self)
+    const allies = combat.entities.filter(entity =>
+      entity.type === actor.type && entity.health > 0
+    );
+
+    // Track total healing done
+    let totalHealing = 0;
+    const healingDetails = [];
+
+    // Apply healing to each ally
+    allies.forEach(ally => {
+      const originalHealth = ally.health;
+      ally.health = Math.min(ally.maxHealth, ally.health + healAmount);
+      const actualHeal = ally.health - originalHealth;
+
+      totalHealing += actualHeal;
+      healingDetails.push({
+        id: ally.id,
+        name: ally.name,
+        healAmount: actualHeal,
+        healthBefore: originalHealth,
+        healthAfter: ally.health
+      });
+    });
+
     return {
-      message: `Evasion is a passive ability that helps with area effect damage.`,
+      message: `${actor.name} casts Mass Heal, restoring ${healAmount} health to all allies!`,
       details: {
-        isPassive: true
+        spellType: 'massHeal',
+        baseHealAmount: healAmount,
+        totalHealing: totalHealing,
+        energyCost: 30,
+        actorEnergyBefore: actor.energy + 30,
+        actorEnergyAfter: actor.energy,
+        healingDetails: healingDetails
       }
     };
   }
+
 };
 
 // Get ability by ID
@@ -496,7 +652,7 @@ function getAbilitiesForClass(className) {
   const classAbilityMap = {
     FIGHTER: ['attack', 'secondWind'],
     WIZARD: ['attack', 'fireball', 'shield'],
-    ROGUE: ['attack', 'sneakAttack', 'evasion']
+    CLERIC: ['attack', 'heal', 'divineSmite']
   };
 
   // Return the appropriate abilities or an empty array

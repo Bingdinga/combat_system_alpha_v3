@@ -1132,3 +1132,57 @@ input[type="text"]:focus {
     color: #666;
     margin-right: 0.5rem;
 }
+
+/* Add these CSS rules for feats */
+.feats-selection {
+    margin-top: 2rem;
+}
+
+.feat-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.feat-option {
+    background-color: #333;
+    border-radius: 8px;
+    padding: 0.8rem;
+    transition: background-color 0.2s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.feat-option:hover {
+    background-color: #444;
+}
+
+.feat-option h5 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    color: #bb86fc;
+}
+
+.feat-description {
+    font-size: 0.9rem;
+    color: #ccc;
+    margin-bottom: 0.5rem;
+}
+
+.feat-bonuses {
+    list-style-type: disc;
+    padding-left: 1.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.feat-select {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+}
+
+.feat-select input {
+    margin-right: 0.5rem;
+}

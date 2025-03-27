@@ -6,7 +6,7 @@ class RoomManager {
   }
 
   // Join a player to a room
-  joinRoom(socket, username, roomId, characterClass) {
+  joinRoom(socket, username, roomId, characterClass, feats = []) {
     // Check if player is already in a room
     if (this.socketToRoom.has(socket.id)) {
       this.leaveRoom(socket);
@@ -33,6 +33,7 @@ class RoomManager {
       id: socket.id,
       username: username,
       characterClass: characterClass || null,
+      feats: feats || [],
       ready: false
     };
 

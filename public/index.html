@@ -47,6 +47,14 @@
                         </div>
                     </div>
 
+                    <div class="feats-selection">
+                        <h3>Choose Your Feats</h3>
+                        <p>Select feats to customize your character</p>
+                        <div id="feat-options" class="feat-options">
+                            <!-- Feat options will be dynamically generated here -->
+                        </div>
+                    </div>
+
                     <div class="character-preview">
                         <h3>Character Preview</h3>
                         <div id="ability-scores-preview">
@@ -75,6 +83,11 @@
                                 <span class="ability-value">0</span>
                                 <span class="ability-mod" style="display:none;"></span>
                             </div>
+                            <div class="ability-score">
+                                <span class="ability-name">CHA</span>
+                                <span class="ability-value">0</span>
+                                <span class="ability-mod" style="display:none;"></span>
+                            </div>
                         </div>
                         <div class="character-details">
                             <p>AC: <span id="preview-ac">10</span></p>
@@ -84,6 +97,12 @@
                             <h4>Abilities:</h4>
                             <ul id="preview-abilities">
                                 <!-- Abilities will be dynamically added here -->
+                            </ul>
+                        </div>
+                        <div class="character-feats">
+                            <h4>Selected Feats:</h4>
+                            <ul id="preview-feats">
+                                <!-- Selected feats will be listed here -->
                             </ul>
                         </div>
                     </div>
