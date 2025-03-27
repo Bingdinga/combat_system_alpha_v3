@@ -475,43 +475,43 @@ function generateClassOptions() {
     statList.className = 'stat-preview';
 
     // Add key stats
-    for (const [stat, value] of Object.entries(classData.baseAbilityScores)) {
-      if (['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom'].includes(stat)) {
-        const statItem = document.createElement('li');
-        const statName = stat.substring(0, 3).toUpperCase();
+    // for (const [stat, value] of Object.entries(classData.baseAbilityScores)) {
+    //   if (['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom'].includes(stat)) {
+    //     const statItem = document.createElement('li');
+    //     const statName = stat.substring(0, 3).toUpperCase();
 
-        // Create the stat name element
-        const statNameElement = document.createElement('span');
-        statNameElement.textContent = statName + ' ';
+    //     // Create the stat name element
+    //     const statNameElement = document.createElement('span');
+    //     statNameElement.textContent = statName + ' ';
 
-        // Create the value element with color
-        const statValueElement = document.createElement('span');
-        statValueElement.className = 'stat-value';
+    //     // Create the value element with color
+    //     const statValueElement = document.createElement('span');
+    //     statValueElement.className = 'stat-value';
 
-        if (value > 0) {
-          statValueElement.classList.add('ability-positive');
-          statValueElement.textContent = '+' + value;
-        } else if (value < 0) {
-          statValueElement.classList.add('ability-negative');
-          statValueElement.textContent = value; // Already has minus sign
-        } else {
-          statValueElement.textContent = '0';
-        }
+    //     if (value > 0) {
+    //       statValueElement.classList.add('ability-positive');
+    //       statValueElement.textContent = '+' + value;
+    //     } else if (value < 0) {
+    //       statValueElement.classList.add('ability-negative');
+    //       statValueElement.textContent = value; // Already has minus sign
+    //     } else {
+    //       statValueElement.textContent = '0';
+    //     }
 
-        statItem.appendChild(statNameElement);
-        statItem.appendChild(statValueElement);
-        statList.appendChild(statItem);
-      }
-    }
+    //     statItem.appendChild(statNameElement);
+    //     statItem.appendChild(statValueElement);
+    //     statList.appendChild(statItem);
+    //   }
+    // }
 
-    // Add AC
-    const acItem = document.createElement('li');
-    acItem.textContent = `AC: ${classData.baseAC}`;
-    statList.appendChild(acItem);
+    // // Add AC
+    // const acItem = document.createElement('li');
+    // acItem.textContent = `AC: ${classData.baseAC}`;
+    // statList.appendChild(acItem);
 
     // Append elements
     classOption.appendChild(nameHeader);
-    classOption.appendChild(statList);
+    // classOption.appendChild(statList);
 
     // Add click event
     classOption.addEventListener('click', () => {
